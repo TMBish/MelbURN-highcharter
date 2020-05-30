@@ -1,0 +1,269 @@
+---
+title: "Highcharter Cookbook"
+author: "Tom Bishop"
+date: "`r lubridate::today()`"
+output: 
+    html_document:
+        toc: true
+        toc_float: true        
+        theme: sandstone
+---
+
+```{r setup, include=FALSE}
+
+library(highcharter)
+library(tidyverse)
+library(forecast)
+library(ggplot2)
+library(nbastatR)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Intro
+
+`highcharter` is an R implementation of the highcharts javascript graphing API through R's `htmlwidgets`. Most of the highcharts functionality is implemented through `highcharter` however the documentation is a little light. This guide will provide examples on how to create and customise various graphs whilst providing some tips on how to think about the package that will help you build and debug your more ambitious charts. I'll try to show and explain (to the best of my knowledge) the most common graphs and customisation options I use in my day-to-day work.
+
+Your most important resources should be the `highcharter` official website, and the highcharts api documentation which you should bookmark in your browser:
+
+* [Highcharter Official Website](http://jkunst.com/highcharter/)
+* [Highcharts API Documentation](https://api.highcharts.com/highcharts/)
+
+As you become more a more proficient `highcharter` user and your charting requirements become more complicated you will need to understand more about the complexities of the highcharts API and you might need to learn + read a little javascript. This learning curve is actually the best thing about highcharter: basic charts are as easy to create as `ggplot`, whilst complex / beautiful chars are still achievable with enough thought and tinkering.
+
+## When & Why
+
+In my opinion `highcharter` is a perfect compliment for `ggplot2` and I wouldn't suggest that this library can completely supercede your use of that library.
+
+or full disclosure `ggplot` has a number of functional advantages over highcharter as it has simple implementations of reasonably complex chart types
+
+
+If you need to do any of the following and a) your charts are just for your viewing or b) your pretty good at making ggplots look presentable it's probably best use ggplot for:
+* Semi-complicated facetting
+* Layering multiple geoms and 
+* Standard statistical layers / geoms like smooths and confidence intervals / error bars etc.
+
+
+wouldn't suggest that `highcharter` replac
+
+
+## Visualisation Data
+
+I'm a big NBA fan so I'll be illustrating `highcharter` functionality with an NBA dataset I'll get from the `nbastatR` package.
+
+We'll use the gamelogs (boxscores) from the most recent complete NBA season 2018-19:
+
+```{r, warning=FALSE, message=FALSE}
+gamelogs = game_logs(seasons = 2019)
+```
+
+## Basic Charts
+
+### Tidy Data
+
+Most (~90%) of your day-to-day charts can be probably written with 2-3 lines of code using the `hchart` and `hcaes` functions. These functions allow you packages `ggplot` like syntax. That is if your 
+
+In `highcharter`, `ggplot`'s grammar of graphics aesthetic mapping is supported through the `hchart()` function. 
+
+Let's first create a simple summary of some key boxscore stats for each NBA player:
+
+```{r}
+seasonStats = 
+  gamelogs %>% 
+  group_by(namePlayer) %>%
+  summarise(
+    ppg = mean(pts),
+    pctFG = sum(fgm) / sum(fga),
+    pct3FG = sum(fg3m) / sum(fg3a),
+    rpg = mean(treb),
+    apg = mean(ast),
+    spg = mean(stl),
+    bpg = mean(blk),
+    tpg = mean(tov)
+  )
+```
+
+
+A simple `ggplot` of the top 10 scorers in the NBA this year might look like the following:
+
+```{r message=FALSE, warning=FALSE}
+seasonStats %>%
+  arrange(desc(ppg)) %>%
+  slice(1:10) %>%
+  ggplot(aes(x = namePlayer, y = ppg)) +
+  geom_col()
+```
+
+This chart (let's be honest here) looks awful. I personally think ggplot needs to do a better job of creating pleasing default charts and themes to entice beginners. Not to mention that ggplot has chosen to alphabetize the players on the x-axis even though i specifically ordered the dataframe in descending points order, a reasonbaly challenging workaround is needed for an R beginner. Highcharter, on the other hand, creates a readable, nice looking default charts that can be presented naturally in a widely used publishing format (a html page).
+
+Here's the highcharter version of this plot:
+
+```{r}
+seasonStats %>%
+  arrange(desc(ppg)) %>%
+  slice(1:10) %>%
+  hchart("column", hcaes(x = namePlayer, y = ppg))
+```
+
+## Chart Types
+
+There are many chart types available in higcharts which you can see [here](https://api.highcharts.com/highcharts/series) however, I'll go through the main types
+
+### Column | Bar
+
+```{r}
+seasonStats %>%
+  arrange(desc(apg)) %>%
+  slice(1:10) %>%
+  hchart("column", hcaes(x = namePlayer, y = apg)) %>%
+  hc_title(text = "Column Chart")
+```
+
+```{r}
+seasonStats %>%
+  arrange(desc(apg)) %>%
+  slice(1:10) %>%
+  hchart("bar", hcaes(x = namePlayer, y = apg)) %>%
+  hc_title(text = "Bar Chart")
+```
+
+### Scatter | Bubble
+
+```{r}
+seasonStats %>%
+  arrange(desc(ppg)) %>%
+  slice(1:30) %>%
+  hchart("scatter", hcaes(x = apg, y = rpg)) %>%
+  hc_title(text = "Scatter")
+```
+
+```{r}
+seasonStats %>%
+  arrange(desc(ppg)) %>%
+  slice(1:30) %>%
+  hchart("bubble", hcaes(x = rpg, y = apg, size = ppg)) %>%
+  hc_title(text = "Bubble")
+```
+
+
+### Line | Spline
+
+### Area | Areaspline
+
+
+
+
+
+
+
+
+
+
+### Chart Elements
+
+Controlling the various important elements is easy and a very easy way to make a chart look
+
+#### Axes
+
+*Titles*
+
+```{r}
+gamelogs %>% 
+  group_by(namePlayer) %>%
+  summarise(points = sum(pts)) %>%
+  arrange(desc(points)) %>%
+  slice(1:10) %>%
+  hchart("column", hcaes(x = namePlayer, y = points)) %>%
+  hc_yAxis(title = list(text = "Total Points")) %>%
+  hc_xAxis(title = list(text = "Player Name"))
+```
+
+*Units / Formatting*
+
+You should always display units in the most human readable way you know. Adding comma seperators to large
+
+#### Titles
+
+highcharts have a title and a subtitle element which you can set like following
+
+```{r}
+gamelogs %>% 
+  group_by(namePlayer) %>%
+  summarise(points = sum(pts)) %>%
+  arrange(desc(points)) %>%
+  slice(1:10) %>%
+  hchart("column", hcaes(x = namePlayer, y = points)) %>%
+  hc_title(text = "2018-19 Scoring") %>%
+  hc_subtitle(text = "Total points by individual player")
+```
+
+
+
+#### Plot Area
+
+
+
+There's a number of things you might notice about this chart and how it differs from it's ggplot counterpart.
+
+* 
+* t thing is that if you can interact with it; hover over it to see a (relatively ugly) tooltip. Second is that it's dynamic, which you'll notice initially because there are more bars (star wars characters) than there are labels on the y-axis. To see an exaggerated version of this reduce the width of your browser window to see the chart react and replot as it tries to estimate the best way to present the data without it looking busy and cluttered; the number of characters shown on the y-axis will keep decreasing.
+
+This is normally a great and useful feature of highcharts but it's something to keep track of as you plot.
+
+### Default charts
+
+#### hchart()
+
+The `hchart()` function is kind of an amazing function that has been written to create immediate logical graphs from various types of R objects. `hchart()` will detect the R object type and decide the best way to plot it. Here are some examples. Notice that the function call is exactly the same `hchart([object])` but the plot that's produced is very different.
+
+Various other object types are supported which you can find [here](http://jkunst.com/highcharter/hchart.html)
+
+### Numeric Vector :: Histogram
+
+```{r}
+starwars %>%
+  pull(mass) %>%
+  hchart(name = class(.))
+```
+
+
+### Density Object :: Density Plot
+
+```{r}
+starwars %>%
+  filter(!is.na(mass)) %>%
+  pull(mass) %>%
+  density() %>%
+  hchart(name = class(.))
+```
+
+
+### Forecast Object :: Timeseries / Forecast Chart
+
+```{r}
+storms %>%
+  filter(name == "Emily") %>%
+  pull(wind) %>%
+  forecast() %>%
+  hchart(name = class(.))
+```
+
+
+
+
+## Using The API Docs
+
+Lorem Ipsum
+
+## Customisation
+
+Lorem Ipsum
+
+## Advanced Charts
+
+Lorem Ipsum
+
+## Showcase
+
+Lorem Ipsum
+
+
