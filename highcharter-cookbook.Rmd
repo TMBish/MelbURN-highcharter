@@ -13,9 +13,9 @@ output:
 
 library(highcharter)
 library(tidyverse)
-library(forecast)
 library(ggplot2)
 library(nbastatR)
+library(forecast)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
@@ -79,7 +79,10 @@ seasonStats =
     spg = mean(stl),
     bpg = mean(blk),
     tpg = mean(tov)
-  )
+  ) %>%
+  arrange(desc(ppg))
+
+seasonStats %>% head(2)
 ```
 
 
@@ -93,7 +96,7 @@ seasonStats %>%
   geom_col()
 ```
 
-This chart (let's be honest here) looks awful. I personally think ggplot needs to do a better job of creating pleasing default charts and themes to entice beginners. Not to mention that ggplot has chosen to alphabetize the players on the x-axis even though i specifically ordered the dataframe in descending points order, a reasonbaly challenging workaround is needed for an R beginner. Highcharter, on the other hand, creates a readable, nice looking default charts that can be presented naturally in a widely used publishing format (a html page).
+This chart (let's be honest here) looks awful. I personally think ggplot needs to do a better job of creating pleasing default charts and themes to entice beginners. Not to mention that ggplot has chosen to alphabetize the players on the x-axis even though i specifically ordered the dataframe in descending points per game order, a reasonbaly challenging workaround is needed for an R beginner. Highcharter, on the other hand, creates readable, nice looking default charts that can be presented naturally in a widely used publishing format (a html page).
 
 Here's the highcharter version of this plot:
 
@@ -103,6 +106,8 @@ seasonStats %>%
   slice(1:10) %>%
   hchart("column", hcaes(x = namePlayer, y = ppg))
 ```
+
+Notice the 
 
 ## Chart Types
 
@@ -131,7 +136,7 @@ seasonStats %>%
 ```{r}
 seasonStats %>%
   arrange(desc(ppg)) %>%
-  slice(1:30) %>%
+  slice(1:200) %>%
   hchart("scatter", hcaes(x = apg, y = rpg)) %>%
   hc_title(text = "Scatter")
 ```
@@ -195,6 +200,37 @@ gamelogs %>%
   hc_title(text = "2018-19 Scoring") %>%
   hc_subtitle(text = "Total points by individual player")
 ```
+
+
+
+
+
+### Advanced Charts
+
+
+#### Showcase
+
+
+```{r}
+gamelogs %>%
+  group_by(namePlayer) %>%
+  filter(sum(pts) >= 2000) %>%
+  group_by(namePlayer) %>%
+  arrange(dateGame) %>%
+  mutate(ptsCumulative = cumsum(pts), game_number = 1:n()) %>%
+  select(namePlayer, ptsCumulative, game_number) %>%
+  hchart("line", hcaes(X = game_number, y = ptsCumulative, group = namePlayer))
+
+
+```
+
+
+
+
+
+
+
+
 
 
 
