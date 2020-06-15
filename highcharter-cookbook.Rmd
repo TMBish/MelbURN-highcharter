@@ -6,7 +6,7 @@ output:
     html_document:
         toc: true
         toc_float: true        
-        theme: sandstone
+        theme: lumen
 ---
 
 ```{r setup, include=FALSE}
@@ -19,9 +19,11 @@ library(forecast)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-## Intro
+## Overview
 
-`highcharter` is an R implementation of the highcharts javascript graphing API through R's `htmlwidgets`. Most of the highcharts functionality is implemented through `highcharter` however the documentation is a little light. This guide will provide examples on how to create and customise various graphs whilst providing some tips on how to think about the package that will help you build and debug your more ambitious charts. I'll try to show and explain (to the best of my knowledge) the most common graphs and customisation options I use in my day-to-day work.
+### What
+
+`highcharter` is an R implementation of the highcharts javascript graphing API through R's `htmlwidgets`. Most of the highcharts functionality is implemented through `highcharter` however the documentation is a little light. This guide will provide examples on how to create and customise various graphs whilst providing some tips on how to think about the package that will help you build and debug your more ambitious charts. I'll try to show and explain (to the best of my knowledge) the most common graphs and customisation options I use in my day-to-day work. I assume you're familiar with creating simple `ggplot` graphs and mapping data to chart dimensions using the `aes()` function.
 
 Your most important resources should be the `highcharter` official website, and the highcharts api documentation which you should bookmark in your browser:
 
@@ -30,25 +32,17 @@ Your most important resources should be the `highcharter` official website, and 
 
 As you become more a more proficient `highcharter` user and your charting requirements become more complicated you will need to understand more about the complexities of the highcharts API and you might need to learn + read a little javascript. This learning curve is actually the best thing about highcharter: basic charts are as easy to create as `ggplot`, whilst complex / beautiful chars are still achievable with enough thought and tinkering.
 
-## When & Why
+### When & Why
 
-In my opinion `highcharter` is a perfect compliment for `ggplot2` and I wouldn't suggest that this library can completely supercede your use of that library.
+`highcharter` is a perfect compliment for `ggplot2`. Depending on your needs you it might not completely replace your use of that library, but it may. `ggplot` has a number of functional advantages over highcharter as it has simple implementations of reasonably complex chart types. I'd say I use `highcharter` for 90% of my day to day plots.
 
-or full disclosure `ggplot` has a number of functional advantages over highcharter as it has simple implementations of reasonably complex chart types
-
-
-If you need to do any of the following and a) your charts are just for your viewing or b) your pretty good at making ggplots look presentable it's probably best use ggplot for:
+If you need to do any of the following or you're a gun at making ggplots look presentable it's I'd suggest using `ggplot`:
 * Semi-complicated facetting
-* Layering multiple geoms and 
 * Standard statistical layers / geoms like smooths and confidence intervals / error bars etc.
 
+### Getting The Data
 
-wouldn't suggest that `highcharter` replac
-
-
-## Visualisation Data
-
-I'm a big NBA fan so I'll be illustrating `highcharter` functionality with an NBA dataset I'll get from the `nbastatR` package.
+I'll be illustrating `highcharter` functionality with an NBA dataset I'll get from the `nbastatR` package.
 
 We'll use the gamelogs (boxscores) from the most recent complete NBA season 2018-19:
 
@@ -58,38 +52,16 @@ gamelogs = game_logs(seasons = 2019)
 
 ## Basic Charts
 
-### Tidy Data
+### Tidy Data & ggplot2
 
-Most (~90%) of your day-to-day charts can be probably written with 2-3 lines of code using the `hchart` and `hcaes` functions. These functions allow you packages `ggplot` like syntax. That is if your 
-
-In `highcharter`, `ggplot`'s grammar of graphics aesthetic mapping is supported through the `hchart()` function. 
-
-Let's first create a simple summary of some key boxscore stats for each NBA player:
-
-```{r}
-seasonStats = 
-  gamelogs %>% 
-  group_by(namePlayer) %>%
-  summarise(
-    ppg = mean(pts),
-    pctFG = sum(fgm) / sum(fga),
-    pct3FG = sum(fg3m) / sum(fg3a),
-    rpg = mean(treb),
-    apg = mean(ast),
-    spg = mean(stl),
-    bpg = mean(blk),
-    tpg = mean(tov)
-  ) %>%
-  arrange(desc(ppg))
-
-seasonStats %>% head(2)
-```
-
+Most (~90%) of your day-to-day charts can be probably written with 2-3 lines of code using the `hchart` and `hcaes` functions. These functions allow you to use the extremely powerful grammar of graphics to turn R data into interactive charts - functionality that isn't implemented natively in R `plotly` for example. Like `ggplot2` your data needs to be in tidy / long format so you'll need to be using `tidyr` for some simple data pivotting before passing it to your highchart functions.
 
 A simple `ggplot` of the top 10 scorers in the NBA this year might look like the following:
 
 ```{r message=FALSE, warning=FALSE}
-seasonStats %>%
+gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(ppg = mean(pts)) %>%
   arrange(desc(ppg)) %>%
   slice(1:10) %>%
   ggplot(aes(x = namePlayer, y = ppg)) +
@@ -101,73 +73,202 @@ This chart (let's be honest here) looks awful. I personally think ggplot needs t
 Here's the highcharter version of this plot:
 
 ```{r}
-seasonStats %>%
-  arrange(desc(ppg)) %>%
+gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(ppg = mean(pts)) %>%
   slice(1:10) %>%
   hchart("column", hcaes(x = namePlayer, y = ppg))
 ```
 
-Notice the 
+There are many chart types available in higcharts which you can see [here](https://api.highcharts.com/highcharts/series) however, I'll go through simple calls for the most common chart types.
 
-## Chart Types
-
-There are many chart types available in higcharts which you can see [here](https://api.highcharts.com/highcharts/series) however, I'll go through the main types
-
-### Column | Bar
+### Column
 
 ```{r}
-seasonStats %>%
+gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(apg = mean(ast)) %>%
   arrange(desc(apg)) %>%
   slice(1:10) %>%
   hchart("column", hcaes(x = namePlayer, y = apg)) %>%
-  hc_title(text = "Column Chart")
+  hc_title(text = "Assists Per Game")
 ```
 
+### Bar
+
 ```{r}
-seasonStats %>%
+gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(apg = mean(ast)) %>%
   arrange(desc(apg)) %>%
   slice(1:10) %>%
   hchart("bar", hcaes(x = namePlayer, y = apg)) %>%
-  hc_title(text = "Bar Chart")
+  hc_title(text = "Assists Per Game")
 ```
 
-### Scatter | Bubble
+### Scatter
 
 ```{r}
-seasonStats %>%
-  arrange(desc(ppg)) %>%
-  slice(1:200) %>%
-  hchart("scatter", hcaes(x = apg, y = rpg)) %>%
-  hc_title(text = "Scatter")
-```
-
-```{r}
-seasonStats %>%
-  arrange(desc(ppg)) %>%
+gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(orebpg = mean(oreb), drebpg = mean(dreb), trebpg = mean(treb)) %>%
+  arrange(desc(trebpg)) %>%
   slice(1:30) %>%
-  hchart("bubble", hcaes(x = rpg, y = apg, size = ppg)) %>%
-  hc_title(text = "Bubble")
+  hchart("scatter", hcaes(x = drebpg, y = orebpg)) %>%
+  hc_title(text = "Off. Rebounds vs Def. Rebounds")
+```
+
+### Bubble
+
+```{r}
+gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(orebpg = mean(oreb), drebpg = mean(dreb), trebpg = mean(treb)) %>%
+  arrange(desc(trebpg)) %>%
+  slice(1:30) %>%
+  hchart("scatter", hcaes(x = drebpg, y = orebpg, size = trebpg)) %>%
+  hc_title(text = "Off. Rebounds vs Def. Rebounds")
+```
+
+### Line
+
+```{r}
+gamelogs %>%
+  filter(namePlayer == "Luka Doncic") %>%
+  hchart("line", hcaes(x = numberGamePlayerSeason, y = pts)) %>%
+  hc_title(text = "Luka Doncic Points")
+```
+
+### Spline
+
+Splines have smoothed edges
+
+```{r}
+gamelogs %>%
+  filter(namePlayer == "Luka Doncic") %>%
+  hchart("spline", hcaes(x = numberGamePlayerSeason, y = pts)) %>%
+  hc_title(text = "Luka Doncic Points")
+```
+
+### Area
+
+```{r}
+gamelogs %>%
+  filter(namePlayer == "Jonathan Isaac") %>%
+  arrange(numberGamePlayerSeason) %>%
+  mutate(blocks = cumsum(blk)) %>%
+  hchart("area", hcaes(x = numberGamePlayerSeason, y = blocks)) %>%
+  hc_title(text = "Jonathan Isaac Blocks")
+```
+
+There is an areaspline (smoothed edges) too.
+
+## The API
+
+The most important thing to learn about this package is how the relatively undocumented R functions map onto the actual `highcharts` javascript library. The way these `htmlwidgets` packages work is consuming R dataframes and R instructions and turning them into the javascript code, that when embedded into your output html page, will display the particular chart you wanted to create.
+
+Once you understand this concept you'll no longer be limited by the package documnetation, or Josh Kunst's highcharter showcase website. You'll be able to build many, many different charts with near unlimited customisation.
+
+To illustrate how to write R highcharter code from just the javascript API docuementation we'll isolate a relatively simple component: a chart's y axis.
+
+### A Simple Example: Y Axis
+
+To customise a highcharter y axis you need to use the `hc_yAxis()` function. Let's have a look at the documentation for that function.
+
+```{r, eval=FALSE}
+help(hc_yAxis)
+```
+
+![](img/hc_yAxis_help.PNG)
+
+There is some example customisation supplied in the exaples which can be very helpful, but is still limited to a few examples. It might not click with you immediately what's required or valid as an input for the `hc_yAxis()` function. How do I know what arguments I can use for this function? Well the answer is always the API documentation. Let's check the actual highcharts API documentation for a highcharts y Axis. You can find it yourself [here](https://api.highcharts.com/highcharts/yAxis) but it looks like this:
+
+![](img/yAxis_api_doc.PNG)
+
+The arguments in the green rectangle (there are more than shown) is an exhaustive list of the customisation options for a highcharts y Axis. There are nearly 50 different arguments for a y axis that will change the way your charts looks or works, and you can use any of them (provided highcharter stays up to date) in your R function calls. 
+
+The highcharts javascript API is expecting a JSON packet to define all y axis options. That is some options are single strings, some are booleans TRUE / FALSE, some are numbers. But some are arrays of numbers or strings and some are more JSON packets. Highcharter will make conversion provided you supply the options as an appropriately structured and named R list. 
+
+#### Simple Arguments
+
+Starting simply using one of the simple boolean chart options if we set `gridLineWidth` to 10 it will make the major grid lines to be massive and ugly:
+
+```{r}
+gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(apg = mean(ast)) %>%
+  arrange(desc(apg)) %>%
+  slice(1:10) %>%
+  hchart("column", hcaes(x = namePlayer, y = apg)) %>%
+  hc_title(text = "Assists Per Game") %>%
+  hc_yAxis(gridLineWidth = 10)
 ```
 
 
-### Line | Spline
+#### Nested Arguments
 
-### Area | Areaspline
+Your most common form of axis customisation will be probably be the title and labels on the axis. Here's the documentation for a Y axis title
 
+![](img/yAxis_title_api_doc.PNG)
 
+Notice the dropdown icons and nested arguments. They tell us that the axis title should be defined by it's own JSON packet within the broader y Axis configuration. Further any styling you want to add to the title should be another JSON packet (we'll get to this part next). To correctly create this JSON packet in R we use named lists. 
 
+When using the documentation all you should think is when I see a nested JSON packet with a dropdown marker / open curly braces I need to start a new R list.
 
+```{r}
+gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(apg = mean(ast)) %>%
+  arrange(desc(apg)) %>%
+  slice(1:10) %>%
+  hchart("column", hcaes(x = namePlayer, y = apg)) %>%
+  hc_title(text = "Assists Per Game") %>%
+  hc_yAxis(
+    endOnTick = FALSE,
+    title = list(
+        text = "Assists Per Game",
+        align = "high", # Documentation says options are: low, middle or high
+        margin = 10 # Number of pixels between the title and the axis line
+    )
+  )
+```
 
+It's as simple as that. Any argument listed in the highcharts API documentation, whether it's a simple string or number or another nested JSON packet, can be inserted into the appropriate R function call using the right syntax. Failure to name the arguments properly or nest the options appropriately won't cause a fatal error - the options just won't be successfully added to the chart (this can be frustrating debugging at times tbh).
 
+#### Style (CSS)
 
+The style argument is a special case on many highcharts components. In the documentation for yAxis above, only color is listed as an option but it's not nearly the only option. If you've done a little bit more web coding you'll know that what it's referring to is CSS style. Any CSS property can be added to a highcharter component that has this style argument. In this case we'll be defining the CSS properties to adjust on the chart title. A list of CSS properties can be found [here](https://www.w3schools.com/cssref/).
 
+What to watch for here is that CSS properties are often hyphenated words (like `font-weight`) which won't play perfectly nicely in R lists so you should define properties in your R lists with camel case version of these property names (eg. `fontWeight`). As an example we'll make the chart title bold, slightly larger and the color of the columns like so:
 
+```{r}
+gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(apg = mean(ast)) %>%
+  arrange(desc(apg)) %>%
+  slice(1:10) %>%
+  hchart("column", hcaes(x = namePlayer, y = apg)) %>%
+  hc_title(text = "Assists Per Game") %>%
+  hc_yAxis(
+    endOnTick = FALSE,
+    title = list(
+        text = "Assists Per Game",
+        align = "high", # Documentation says options are: low, middle or high
+        margin = 10, # Number of pixels between the title and the axis line
+        style = list(
+            fontWeight = "bold",
+            fontSize = '1.4em', # 1.4 x tthe size of the current text
+            color = "#7cb5ec" # Hex code for the default blue
+        )
+    )
+  )
+```
 
-### Chart Elements
+## Styling
 
 Controlling the various important elements is easy and a very easy way to make a chart look
 
-#### Axes
+### Axes
 
 *Titles*
 
@@ -186,7 +287,7 @@ gamelogs %>%
 
 You should always display units in the most human readable way you know. Adding comma seperators to large
 
-#### Titles
+### Titles
 
 highcharts have a title and a subtitle element which you can set like following
 
@@ -282,24 +383,5 @@ storms %>%
   forecast() %>%
   hchart(name = class(.))
 ```
-
-
-
-
-## Using The API Docs
-
-Lorem Ipsum
-
-## Customisation
-
-Lorem Ipsum
-
-## Advanced Charts
-
-Lorem Ipsum
-
-## Showcase
-
-Lorem Ipsum
 
 
