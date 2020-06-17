@@ -16,6 +16,7 @@ library(tidyverse)
 library(ggplot2)
 library(nbastatR)
 library(forecast)
+library(lubridate)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
@@ -25,12 +26,14 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 `highcharter` is an R implementation of the highcharts javascript graphing API through R's `htmlwidgets`. Most of the highcharts functionality is implemented through `highcharter` however the documentation is a little light. This guide will provide examples on how to create and customise various graphs whilst providing some tips on how to think about the package that will help you build and debug your more ambitious charts. I'll try to show and explain (to the best of my knowledge) the most common graphs and customisation options I use in my day-to-day work. I assume you're familiar with creating simple `ggplot` graphs and mapping data to chart dimensions using the `aes()` function.
 
+Highcharts is a commercial product so you can't add these charts to a commercial product (selling to customers) without purchasing a licence but non commercial use (internal organisation / research) comes under their free license.
+
 Your most important resources should be the `highcharter` official website, and the highcharts api documentation which you should bookmark in your browser:
 
 * [Highcharter Official Website](http://jkunst.com/highcharter/)
 * [Highcharts API Documentation](https://api.highcharts.com/highcharts/)
 
-As you become more a more proficient `highcharter` user and your charting requirements become more complicated you will need to understand more about the complexities of the highcharts API and you might need to learn + read a little javascript. This learning curve is actually the best thing about highcharter: basic charts are as easy to create as `ggplot`, whilst complex / beautiful chars are still achievable with enough thought and tinkering.
+As you become more a more proficient `highcharter` user and your charting requirements become more complicated you will need to understand more about the complexities of the highcharts API and you might need to learn, read and write a little javascript. This learning curve is actually the best thing about highcharter: most basic charts are as easy to create as `ggplot`, whilst complex and beautiful charts are still achievable with enough thought and tinkering.
 
 ### When & Why
 
@@ -163,7 +166,7 @@ gamelogs %>%
 
 There is an areaspline (smoothed edges) too.
 
-## The API
+## Understanding The API
 
 The most important thing to learn about this package is how the relatively undocumented R functions map onto the actual `highcharts` javascript library. The way these `htmlwidgets` packages work is consuming R dataframes and R instructions and turning them into the javascript code, that when embedded into your output html page, will display the particular chart you wanted to create.
 
@@ -171,7 +174,7 @@ Once you understand this concept you'll no longer be limited by the package docu
 
 To illustrate how to write R highcharter code from just the javascript API docuementation we'll isolate a relatively simple component: a chart's y axis.
 
-### A Simple Example: Y Axis
+### A Simple Example
 
 To customise a highcharter y axis you need to use the `hc_yAxis()` function. Let's have a look at the documentation for that function.
 
@@ -264,23 +267,254 @@ gamelogs %>%
   )
 ```
 
-## Styling
+### Chart Data
 
-Controlling the various important elements is easy and a very easy way to make a chart look
+Not only are the various chart features understandable and configurable from referencing the javascript API documentation but the data itself (the mapping between R dataframe rows and columns to highcharts data structures you normally just let `hchart()` do on your behalf) is understandable in the same way. 
 
-### Axes
+Building your own nested lists to bypass the normal `hchart()` approach is a very useful tool to have at your disposal but is overkill for 99% of charts that can be built with a simpler approach. It is, however, helpful to understand and if you want to make highly bespoke charts you'll probably need to understand how this works.
 
-*Titles*
+#### Columns
+
+Let's check the API documentation for a column graph. We'll find the specification for each chart type under the `series >` sub header.
+
+The specification looks like the following
+
+![](img/series_column.PNG)
+
+What we're interested in is the `series > column > data` entry which tells us the viable formats to enter the data for a column chart. The documentation says we can enter the data in 3 different ways:
+
+1. A simple array of numerical values
+2. A array of arrays with x, y value pairs
+3. An array of objects with JSON packets defining a single data point
+
+Let's try to implement the assists chart in each of these 3 ways but without the help of `hchart()`
+
+#### Option 1: Simple Array
+
+The first option says data can be presented as a simple array of values. When we see JSON "array" we should generally think of R lists but sometimes an R vector works too. 
+
+To build a highcharter chart without `hchart()` we need to do it in 2 steps: instantiate a highcharter plot with `highchart()` and then add data and chart type with `hc_add_series()`.
+
+```{r}
+assists = 
+  gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(apg = mean(ast)) %>%
+  arrange(desc(apg)) %>%
+  slice(1:10)
+
+apg = assists %>% pull(apg)
+nammePlayer = assists %>% pull(namePlayer)
+
+highchart() %>%
+hc_add_series(
+  type = "column",
+  data = apg
+)
+```
+
+So it worked, but given we only passed the chart the assist / game data series it doesn't know what players the values correspond to or anything. We can add these by specifying axis "categories":
+
+```{r}
+highchart() %>%
+hc_add_series(
+  type = "column",
+  data = apg
+) 
+# hc_xAxis(categories = namePlayer)
+```
+
+#### Option 2: Array of Arrays
+
+So this option suggests you can provide the data as an array of x, y pairs. This isn't a perfectly natural data structure for R but we can construct a list of x, y pairs from a dataframe with the help of the `list_parse()` function exported with highcharter.
+
+First let's hardcode an example dataseries to see what the data looks like in R:
+
+
+```{r}
+highchart() %>%
+ hc_add_series(
+   type = "column",
+   data = list(
+     list("Russell Westbrook",10.5),
+     list("John Wall", 8.7),
+     list("Kyle Lowry", 8.6)
+   )
+ )
+```
+
+Notice that the x values haven't been placed on the x Axis but rather appear as the "name" of the column when you hover over it.
+
+said when you see array you should think R vector but that doesn't quite work here. What we can create though is a list of 2 R vectors like this:
+
+```{r}
+ assists =
+   gamelogs %>%
+   group_by(namePlayer) %>%
+   summarise(apg = mean(ast)) %>%
+   arrange(desc(apg)) %>%
+   slice(1:10)
+
+ apg = assists %>% pull(apg)
+ namePlayer = assists %>% pull(namePlayer)
+
+ highchart() %>%
+ hc_add_series(
+   type = "column",
+   data = list(
+     list("Tom",2),
+     list("Hannah",3)
+   )
+ )
+```
+
+#### Array of Objects
+
+So here
+
+```{r}
+ # assists =
+ #   gamelogs %>%
+ #   group_by(namePlayer) %>%
+ #   summarise(apg = mean(ast)) %>%
+ #   arrange(desc(apg)) %>%
+ #   slice(1:10)
+ # 
+ # hcDF =
+ #   assists %>%
+ #   mutate(x = 1:n()) %>%
+ #   rename(
+ #     x = namePlayer,
+ #     y = apg
+ #     #name = namePlayer
+ #   )
+ # 
+ # highchart() %>%
+ # hc_add_series(
+ #   type = "column",
+ #   data = list_parse(hcDF)
+ # )
+```
+
+
+## Pre-Baked `hchart()` for different R classes
+
+One of the awesome features Josh Kunst has built into highcharter is that, with some black box magic, `hchart()` supports charting of various standard R objects / classes out of the box.
+
+The github page currently says this function current supports: numeric, histogram, character, density, factors, ts, mts, xts, stl, ohlc, acf, forecast, mforecast, ets, igraph, dist, dendrogram, survfit classes.
+
+To see how this works lets have a look at a few examples of the functionality that i use regularly. This gamelog dataset doesn't lend itself to some of these classes so I won't show them all.
+
+### Histograms
+
+I want to view histograms or density plots of numeric vectors very regularly. This is a simple one liner in highcharter
+
+```{r}
+gamelogs %>% pull(pts) %>% hchart()
+```
+
+hchart() has been passed a simple numeric vector here (the points scored by players in all 19-20 NBA games), and decided that the appropriate plot is a histogram. Like other highcharts it is a highcharts object that supports the normal layering and customisation so we can add a few lines to makes the chart more readable:
+
+```{r}
+gamelogs %>% pull(pts) %>% 
+  hchart(name = "Player Points") %>%
+  hc_xAxis(title = list(text = "Points Scored")) %>%
+  hc_yAxis(title = list(text = "# times acheived")) %>%
+  hc_title(text = "19-20 Box Score Points")
+```
+
+### Densities
+
+Similarly if we were interested in this plot but in a density form (smoothed & proportion of total cases) we can simply pass hchart() a density object created by the base density() function
 
 ```{r}
 gamelogs %>% 
-  group_by(namePlayer) %>%
-  summarise(points = sum(pts)) %>%
-  arrange(desc(points)) %>%
-  slice(1:10) %>%
-  hchart("column", hcaes(x = namePlayer, y = points)) %>%
-  hc_yAxis(title = list(text = "Total Points")) %>%
-  hc_xAxis(title = list(text = "Player Name"))
+  pull(pf) %>% 
+  density() %>%
+  hchart(name = "Player Fouls") %>%
+  hc_xAxis(title = list(text = "Fouls")) %>%
+  hc_yAxis(title = list(text = "% of time acheived")) %>%
+  hc_title(text = "19-20 Box Score Fouls")
+```
+
+### Character / Factor Counts
+
+Like the numeric vector example suppling hchart() with a character vector or factor vector will create a plot of the value counts within the vector.
+
+```{r}
+gamelogs %>% pull(slugTeamWinner) %>% hchart(name="Total Winning Games Per Player")
+```
+
+### Forecast
+
+To show a more elaborate implementation a forecast created with the forecast package is plotted automatically as follows
+
+```{r}
+gamelogs %>%
+  filter(namePlayer == "Al Horford") %>%
+  select(pts) %>%
+  slice(1:60) %>%
+  ts() %>%
+  forecast() %>%
+  hchart()
+```
+
+### Correlation Matrix
+
+Plotting a correlation matrix from a base R correlation analysis is also simple and easy. Notice the huge presentation and clutter advantage of interactivity for a chart type like this.
+
+```{r}
+
+gamelogs %>%
+  select(pts, minutes, treb, dreb, oreb) %>%
+  cor() %>%
+  hchart()
+```
+
+## Components + Style
+
+Adding the right components and style to charts is my #1 rule for data visualisation. It's your job as the visualiser to make a chart that is clear, easy to understand, and purposeful. Too many charts are presented without labels, descriptions, units or fail to convey a message or conclusion and it's a crime (not a real crime I guess, but a chart crime). Making your chart clean and aesthetically appealing is also a hugely underated job and has huge impact on how much effort your viewer will spend trying to absorb your charts message.
+
+This is where highcharter really shines over some of it's htmlwidget & static competitors.
+
+### Axes
+
+Adding titles, units
+
+
+```{r}
+# gamelogs %>% 
+#   group_by(namePlayer) %>%
+#   mutate(
+#     teamWinPct = mean(ifelse(outcomeGame == "W", 1, 0)),
+#     above500 = ifelse(teamWinPct > 0.5, "> 500", "< 500")
+#   ) %>%
+#   ungroup() %>%
+#   group_by(namePlayer, above500, isB2BSecond) %>%
+#   summarise(
+#     makes3 = sum(fg3m),
+#     attempts3 = sum(fg3a)
+#   ) %>%
+#   ungroup() %>%
+#   mutate(pct3pt = makes3 / attempts3) %>%
+#   select(-makes3, -attempts3) %>%
+# 
+#            
+#            
+#            
+#            
+#            
+#            
+#            )
+#   hchart("scatter")
+#   select(namePlayer)
+#   group_by(namePlayer) %>%
+#   summarise(points = sum(pts)) %>%
+#   arrange(desc(points)) %>%
+#   slice(1:10) %>%
+#   hchart("column", hcaes(x = namePlayer, y = points)) %>%
+#   hc_yAxis(title = list(text = "Total Points")) %>%
+#   hc_xAxis(title = list(text = "Player Name"))
 ```
 
 *Units / Formatting*
@@ -302,40 +536,7 @@ gamelogs %>%
   hc_subtitle(text = "Total points by individual player")
 ```
 
-
-
-
-
-### Advanced Charts
-
-
-#### Showcase
-
-
-```{r}
-gamelogs %>%
-  group_by(namePlayer) %>%
-  filter(sum(pts) >= 2000) %>%
-  group_by(namePlayer) %>%
-  arrange(dateGame) %>%
-  mutate(ptsCumulative = cumsum(pts), game_number = 1:n()) %>%
-  select(namePlayer, ptsCumulative, game_number) %>%
-  hchart("line", hcaes(X = game_number, y = ptsCumulative, group = namePlayer))
-
-
-```
-
-
-
-
-
-
-
-
-
-
-
-#### Plot Area
+### Plot Area
 
 
 
@@ -383,5 +584,38 @@ storms %>%
   forecast() %>%
   hchart(name = class(.))
 ```
+
+## Advanced Charts
+
+
+### Showcase: Donut Tooltip
+
+Let's try to replicate Josh Kunst's awesome donut / scatter plot but with NBA data. I'll try to talk through the logic here.
+
+
+
+
+
+
+```{r}
+gamelogs %>%
+  group_by(namePlayer) %>%
+  filter(sum(pts) >= 2000) %>%
+  group_by(namePlayer) %>%
+  arrange(dateGame) %>%
+  mutate(ptsCumulative = cumsum(pts), game_number = 1:n()) %>%
+  select(namePlayer, ptsCumulative, game_number) %>%
+  hchart("line", hcaes(X = game_number, y = ptsCumulative, group = namePlayer))
+
+
+```
+
+
+
+
+
+
+
+
 
 
