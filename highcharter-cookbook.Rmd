@@ -79,13 +79,16 @@ Here's the highcharter version of this plot:
 gamelogs %>%
   group_by(namePlayer) %>%
   summarise(ppg = mean(pts)) %>%
+  arrange(desc(ppg)) %>%
   slice(1:10) %>%
   hchart("column", hcaes(x = namePlayer, y = ppg))
 ```
 
+### Chart Types
+
 There are many chart types available in higcharts which you can see [here](https://api.highcharts.com/highcharts/series) however, I'll go through simple calls for the most common chart types.
 
-### Column
+#### Column
 
 ```{r}
 gamelogs %>%
@@ -97,7 +100,7 @@ gamelogs %>%
   hc_title(text = "Assists Per Game")
 ```
 
-### Bar
+#### Bar
 
 ```{r}
 gamelogs %>%
@@ -109,7 +112,7 @@ gamelogs %>%
   hc_title(text = "Assists Per Game")
 ```
 
-### Scatter
+#### Scatter
 
 ```{r}
 gamelogs %>%
@@ -121,7 +124,7 @@ gamelogs %>%
   hc_title(text = "Off. Rebounds vs Def. Rebounds")
 ```
 
-### Bubble
+#### Bubble
 
 ```{r}
 gamelogs %>%
@@ -133,7 +136,7 @@ gamelogs %>%
   hc_title(text = "Off. Rebounds vs Def. Rebounds")
 ```
 
-### Line
+#### Line
 
 ```{r}
 gamelogs %>%
@@ -142,7 +145,7 @@ gamelogs %>%
   hc_title(text = "Luka Doncic Points")
 ```
 
-### Spline
+#### Spline
 
 Splines have smoothed edges
 
@@ -153,7 +156,7 @@ gamelogs %>%
   hc_title(text = "Luka Doncic Points")
 ```
 
-### Area
+#### Area
 
 ```{r}
 gamelogs %>%
@@ -165,6 +168,25 @@ gamelogs %>%
 ```
 
 There is an areaspline (smoothed edges) too.
+
+### Layering Elements
+
+As you can see from the code for some of these charts highcharter is much like ggplot where charts are built with layers. The good thing about highchart layers is that they are layered with the pipe `%>%` operator rather than ggplots annoying plus operator `+`. Layering is an excellent pattern for charting as chart objects can be passed further down scripts and altered / ammended by simply taking the current chart object and piping more layers onto it.
+
+#### Layering Series (geoms)
+
+Layering series onto the same chart works much like ggplot. It might look something like this:
+
+```{r}
+# gamelogs %>%
+#   filter(namePlayer == "Andre Drummond") %>%
+#   arrange(numberGamePlayerSeason) %>%
+#   hchart("column", hcaes(x = numberGamePlayerSeason, y = blocks)) %>%
+#   hc_title(text = "Andre Drummond Rebounds")
+```
+
+Layer
+
 
 ## Understanding The API
 
@@ -473,14 +495,126 @@ gamelogs %>%
 
 ## Components + Style
 
-Adding the right components and style to charts is my #1 rule for data visualisation. It's your job as the visualiser to make a chart that is clear, easy to understand, and purposeful. Too many charts are presented without labels, descriptions, units or fail to convey a message or conclusion and it's a crime (not a real crime I guess, but a chart crime). Making your chart clean and aesthetically appealing is also a hugely underated job and has huge impact on how much effort your viewer will spend trying to absorb your charts message.
+Adding the right components and style to charts is my #1 rule for data visualisation. It's your job as the visualiser to make a chart that is clear, easy to understand, and purposeful. Too many charts are presented without labels, descriptions, units or fail to convey a clear message or conclusion and it's a crime (not a real crime I suppose, but a chart crime). Making your chart clean and aesthetically appealing is also a hugely underated job and has huge impact on how much effort your viewer will spend trying to absorb your chart's insight.
 
-This is where highcharter really shines over some of it's htmlwidget & static competitors.
+This is where highcharter really shines over some of it's htmlwidget & static competitors. Highcharter has really natural
+
+### Grids + Facetting
+
+This is an area I've found highcharter to be much inferior to ggplot. ggplots facetting is natural, logical and easy. Supplmentary ggplot packages like `cowplot` and Thomas Pedersen's new `patchwork` package enhance this process even further. On the other hand assembling a grid of highcharts split by some variable or combination of variables requires a fair bit more code. Like most things in highcharter, though, it is largely possible.
+
+Splitting charts vertically is easy with the concept of multiple axes. Axes can be assembled with different heights / sizes to make vertical grids within charts plotting different series. You use the `hc_yAxis_multiples()` function instead of the single `hc_yAxis()` function to do this. 
+
+You can either specify the options for each yAxis with named R lists like the following.
+
+2 Axes:
+```{r}
+harden = 
+  gamelogs %>%
+  filter(namePlayer == "James Harden") %>%
+  select(numberGameTeamSeason, pts, treb, ast) 
+
+hchart(harden, "column", hcaes(x = numberGameTeamSeason, y = pts), yAxis = 0) %>%
+  hc_yAxis_multiples(
+    list(title = list(text = "Points"), top = "0%", height = "50%"), # specify details of axis 1 (0 index)
+    list(title = list(text = "Assists"), top = "50%", height = "50%", opposite = TRUE)  # specify details of axis 2 (1 index)
+  ) %>%
+  hc_add_series(harden, "column", hcaes(x = numberGameTeamSeason, y = ast), yAxis = 1)
+```
+
+With 3 axes we need to specify the top of the axis (the % of the way down the plot area) and how tall we want the axis to be. If we want 3 equal rows then each axis should be 33% (roughly) of the plot area and their starting points should be 0% (top) 33% the way down and 66% of the way down.
+
+```{r}
+hchart(harden, "column", hcaes(x = numberGameTeamSeason, y = pts), yAxis = 0) %>%
+  hc_yAxis_multiples(
+    list(title = list(text = "Points"), top = "0%", height = "33%"), # specify details of axis 1 (0 index)
+    list(title = list(text = "Assists"), top = "33%", height = "33%", opposite = TRUE),  # specify details of axis 2 (1 index)
+    list(title = list(text = "Rebounds"), top = "66%", height = "33%")  # specify details of axis 3 (2 index)
+  ) %>%
+  hc_add_series(harden, "column", hcaes(x = numberGameTeamSeason, y = ast), yAxis = 1) %>%
+  hc_add_series(harden, "column", hcaes(x = numberGameTeamSeason, y = treb), yAxis = 2)
+```
+
+However, you'll notice some weird spacing issues on the 3rd axis, that's due to some little fidgety stuff about the heights and sizes. The helper function `create_yaxis` can create these axis specifications for you with a more simple function call. You could create the same chart like:
+
+```{r}
+hchart(harden, "column", hcaes(x = numberGameTeamSeason, y = pts), yAxis = 0) %>%
+  hc_yAxis_multiples(
+    create_yaxis(
+      naxis = 3,
+      heights = c(1,1,1), # All equal
+      turnopposite = TRUE,
+      title = map(c("Points", "Asissts", "Rebounds"), ~list(text = .)) # Needs a list like list(list(text = 'Points'), ...)
+    )
+  ) %>%
+  hc_add_series(harden, "column", hcaes(x = numberGameTeamSeason, y = ast), yAxis = 1) %>%
+  hc_add_series(harden, "column", hcaes(x = numberGameTeamSeason, y = treb), yAxis = 2)
+```
+
+However this is not our only option. We can simply chain together individual highcharts objects to acheive a similar goal using the `hw_grid()` function.
+
+Let's produce a similar version of this chart using that approach to see how it would work. (Note this R is a little big trickier than what we've seen previously. The output of this `group_map` is a list of highcharter charts. Check the `group_map` documentation if you're confused about how this worked.)
+
+```{r}
+hardenLong = 
+  harden %>%
+  pivot_longer(-numberGameTeamSeason)
+
+hardenLong %>%
+  group_by(name) %>%
+  group_map(~{
+    .x %>%
+      hchart("column", hcaes(x = numberGameTeamSeason, y = value)) %>%
+      hc_title(text = .y$name)
+  }) %>%
+  hw_grid(ncol = 1, rowheight = "200px")
+
+```
 
 ### Axes
 
-Adding titles, units
+Axes can be customised in numerous ways. Most frequently I'm simply changing the axis title, adding unit formatting to the axis labels, changin the plot grid lines, and sometimes removing the axis all together.
 
+```{r}
+gamelogs %>%
+  group_by(nameTeam) %>%
+  summarise(
+    ftaPerGame = sum(fta) / n_distinct(idGame),
+    ftPct = sum(ftm) / sum(fta)
+  ) %>%
+  hchart("scatter", hcaes(x = ftaPerGame, y = ftPct)) %>%
+  hc_title(text = "Team Free Throws") %>%
+  hc_subtitle(text = "Free Thow Attempts Per Game vs FT PCT") %>%
+  hc_xAxis(
+    title = list(text = "Free Throws Per Game", align = "high", style = list(fontWeight = "bold", fontSize = "1.5em")), # Large bolded titles
+    gridLineWidth = 1, gridLineColor = "#E3E9F2", gridLineDashStyle = "longdash", # Light blue long dashed gridlines
+    lineWidth = 0 # No Axis Line
+  ) %>%
+  hc_yAxis(
+    title = list(text = "FT Pct", align = "high", style = list(fontWeight = "bold", fontSize = "1.5em")), # Large bolded titles
+    gridLineWidth = 1, gridLineColor = "#E3E9F2", gridLineDashStyle = "longdash",  # Light blue long dashed gridlines
+    lineWidth = 0 # No Axis Line
+  ) 
+```
+
+### Unit Formatting
+
+Unit formatting is 
+
+```{r}
+gamelogs %>%
+  group_by(nameTeam) %>%
+  summarise(
+    ftaPerGame = sum(fta) / n_distinct(idGame),
+    ftPct = sum(ftm) / sum(fta)
+  ) %>%
+  hchart("scatter", hcaes(x = ftaPerGame, y = ftPct)) %>%
+  hc_title(text = "Team Free Throws") %>%
+  hc_subtitle(text = "Free Thow Attempts Per Game vs FT PCT") %>%
+  hc_yAxis(
+    labels = list(format = "{value}%")
+  ) 
+```
 
 ```{r}
 # gamelogs %>% 
@@ -538,6 +672,30 @@ gamelogs %>%
 
 ### Plot Area
 
+### Packaged Themes
+
+highcharter comes with a number of nice out of the box themes. Let's take a look at them all:
+
+```{r}
+themes = 
+  str_subset(lsf.str("package:highcharter"), "hc_theme_") %>%
+  str_subset("_merge", negate = TRUE)
+
+themes %>%
+  map(function(x){
+    f = match.fun(x)
+    highcharts_demo() %>% hc_add_theme(f()) %>% hc_title(text = x)
+  }) %>%
+  hw_grid(rowheight = 300)
+
+```
+
+Some gooduns in there, how bout making your own theme
+
+### Custom Themes
+
+You can create custom themes from scratch or use one of these themes as a base and merge in some changes.
+
 
 
 There's a number of things you might notice about this chart and how it differs from it's ggplot counterpart.
@@ -588,6 +746,117 @@ storms %>%
 ## Advanced Charts
 
 
+### Showcase: Packed Bubble
+
+```{r}
+
+# Top 5 3 Point Shooting Teams By Makes
+fg3m_top5 = 
+  gamelogs %>%
+  group_by(nameTeam) %>%
+  summarise(total_fg3m = sum(fg3m)) %>%
+  arrange(desc(total_fg3m)) %>%
+  slice(1:5)
+
+# FG3M from those teams with FG3M 50+
+fg3m_seasonTotal = 
+  gamelogs %>%
+  inner_join(fg3m_top5, by = "nameTeam") %>%
+  group_by(namePlayer, nameTeam) %>%
+  summarise(fg3m = sum(fg3m)) %>%
+  filter(fg3m >= 50) %>%
+  ungroup()
+
+# Nested HC List Data - FG3M by Team's Game Number
+# ------ HARDER ---------
+fg3m_byGameNumber = 
+  gamelogs %>%
+  inner_join(fg3m_top5, by = "nameTeam") %>%
+  select(namePlayer, numberGameTeamSeason, fg3m) %>%
+  nest(-namePlayer) %>%
+  mutate(
+    madeFG3M_byGame = 
+      data %>%
+      map(mutate_mapping, hcaes(x = numberGameTeamSeason, y = fg3m), drop = TRUE) %>%
+      map(list_parse)
+  ) %>%
+  select(-data)
+# ------ END HARDER ---------
+
+# Get NBA Team Metadata : including Team Hex Colors
+nbastatR::assign_nba_teams()
+
+chartData = 
+  fg3m_seasonTotal %>%
+  left_join(fg3m_byGameNumber) %>%
+  left_join(df_dict_nba_teams %>% select(nameTeam, colorsTeam)) %>%
+  mutate(
+    colorsTeam = 
+      colorsTeam %>%
+      str_extract("[a-z0-9\\#]+(?=\\,)")
+      # str_split(",", simplify = TRUE) %>%
+      # pluck(1)
+  )
+
+chartData %>% head(2)
+
+```
+  
+
+
+```{r}
+chartData %>%
+  hchart(
+    "packedbubble", 
+    hcaes(value = fg3m, name = namePlayer, group = nameTeam), 
+          #color = colorsTeam),
+    dataLabels = list(
+      enabled = TRUE,
+      format = '{point.name}',
+      style = list(
+        textOutline = "none",
+        color = "#000000",
+        fontWeight = "normal"
+      )
+    ),
+    colorAxis = 1
+  ) %>%
+  hc_plotOptions(
+    packedbubble = list(
+      minSize = '10px',
+      maxSize = '100px',
+      #zMin = 0,
+      #zMax = 1000,
+      layoutAlgorithm = list(
+        #gravitationalConstant =  0.05,
+        bubblePadding = 10,
+        splitSeries = TRUE,
+        seriesInteraction = TRUE,
+        maxIterations = 500
+        #parentNodeLimit = TRUE
+      )
+    )
+  ) %>%
+  hc_tooltip(
+    useHTML = TRUE,
+    headerFormat = "<b>{point.key}</b>",
+    pointFormatter = tooltip_chart(
+      accesor = "madeFG3M_byGame",
+      hc_opts = list(
+        chart = list(type = "column"),
+        yAxis = list(title = list(text = "FG3M")),
+        xAxis = list(title = list(text = "Game #"))
+      )
+    )
+  ) %>%
+  #hc_add_theme(hc_theme_elementary()) %>%
+  #hc_colors(chartData%>% pull(colorsTeam) %>% unique()) %>%
+  hc_title(text = "Total 3 Point Makes 19-20") %>%
+  hc_subtitle(text = "Top 5 3PM Teams | showing players with 50+ 3PM on the season")
+
+
+```
+
 ### Showcase: Donut Tooltip
 
 Let's try to replicate Josh Kunst's awesome donut / scatter plot but with NBA data. I'll try to talk through the logic here.
@@ -595,21 +864,114 @@ Let's try to replicate Josh Kunst's awesome donut / scatter plot but with NBA da
 
 
 
+```{r}
+
+# Top 5 3 Point Shooting Teams By Makes
+fg3m_top5 = 
+  gamelogs %>%
+  group_by(nameTeam) %>%
+  summarise(total_fg3m = sum(fg3m)) %>%
+  arrange(desc(total_fg3m)) %>%
+  slice(1:5)
+
+# FG3M from those teams with FG3M 50+
+fg3m_seasonTotal = 
+  gamelogs %>%
+  inner_join(fg3m_top5, by = "nameTeam") %>%
+  group_by(namePlayer, urlPlayerHeadshot, nameTeam) %>%
+  summarise(fg3m = sum(fg3m)) %>%
+  filter(fg3m >= 50) %>%
+  ungroup()
+
+# Nested HC List Data - FG3M by Team's Game Number
+# ------ HARDER ---------
+fg3m_byGameNumber = 
+  gamelogs %>%
+  inner_join(fg3m_top5, by = "nameTeam") %>%
+  select(namePlayer, numberGameTeamSeason, fg3m) %>%
+  nest(-namePlayer) %>%
+  mutate(
+    madeFG3M_byGame = 
+      data %>%
+      map(mutate_mapping, hcaes(x = numberGameTeamSeason, y = fg3m), drop = TRUE) %>%
+      map(list_parse)
+  ) %>%
+  select(-data)
+# ------ END HARDER ---------
+
+# Get NBA Team Metadata : including Team Hex Colors
+nbastatR::assign_nba_teams()
+
+chartData = 
+  fg3m_seasonTotal %>%
+  left_join(fg3m_byGameNumber) %>%
+  left_join(df_dict_nba_teams %>% select(nameTeam, colorsTeam)) %>%
+  mutate(
+    colorsTeam = 
+      colorsTeam %>%
+      str_extract("[a-z0-9\\#]+(?=\\,)")
+      # str_split(",", simplify = TRUE) %>%
+      # pluck(1)
+  )
+
+chartData %>% head(2)
+
+```
+  
 
 
 ```{r}
-gamelogs %>%
-  group_by(namePlayer) %>%
-  filter(sum(pts) >= 2000) %>%
-  group_by(namePlayer) %>%
-  arrange(dateGame) %>%
-  mutate(ptsCumulative = cumsum(pts), game_number = 1:n()) %>%
-  select(namePlayer, ptsCumulative, game_number) %>%
-  hchart("line", hcaes(X = game_number, y = ptsCumulative, group = namePlayer))
+chartData %>%
+  hchart(
+    "packedbubble", 
+    hcaes(value = fg3m, name = namePlayer, group = nameTeam, marker = list(symbol = "diamond")), 
+          #color = colorsTeam),
+    dataLabels = list(
+      enabled = TRUE,
+      format = '{point.name}',
+      style = list(
+        textOutline = "none",
+        color = "#000000",
+        fontWeight = "normal"
+      )
+    ),
+    colorAxis = 1
+  ) %>%
+  hc_plotOptions(
+    packedbubble = list(
+      minSize = '10px',
+      maxSize = '100px',
+      #zMin = 0,
+      #zMax = 1000,
+      layoutAlgorithm = list(
+        #gravitationalConstant =  0.05,
+        bubblePadding = 10,
+        splitSeries = TRUE,
+        seriesInteraction = TRUE,
+        maxIterations = 500
+        #parentNodeLimit = TRUE
+      )
+    )
+  ) %>%
+  hc_tooltip(
+    useHTML = TRUE,
+    headerFormat = "<b>{point.key}</b>",
+    pointFormatter = tooltip_chart(
+      accesor = "madeFG3M_byGame",
+      hc_opts = list(
+        chart = list(type = "column"),
+        yAxis = list(title = list(text = "FG3M")),
+        xAxis = list(title = list(text = "Game #"))
+      )
+    )
+  ) %>%
+  #hc_add_theme(hc_theme_elementary()) %>%
+  #hc_colors(chartData%>% pull(colorsTeam) %>% unique()) %>%
+  hc_title(text = "Total 3 Point Makes 19-20") %>%
+  hc_subtitle(text = "Top 5 3PM Teams | showing players with 50+ 3PM on the season")
 
 
 ```
-
 
 
 
