@@ -189,12 +189,12 @@ As you can see from the code for some of these charts highcharter is much like g
 Layering series onto the same chart works much like ggplot. It's a little bet less natural as the data object must be supplied each time which prevents big long data into highcharter chanins but it might look something like this:
 
 ```{r}
-gamelogs %>%
-  filter(namePlayer == "Andre Drummond") %>%
-  arrange(numberGamePlayerSeason) %>%
-  hchart("column", hcaes(x = numberGamePlayerSeason, y = dreb)) %>%
-  hc_add_series(data = NULL, "column", hcaes(x = numberGamePlayerSeason, y = oreb)) %>%
-  hc_title(text = "Andre Drummond Rebounds")
+# gamelogs %>%
+#   filter(namePlayer == "Andre Drummond") %>%
+#   arrange(numberGamePlayerSeason) %>%
+#   hchart("column", hcaes(x = numberGamePlayerSeason, y = dreb)) %>%
+#   hc_add_series(data = NULL, "column", hcaes(x = numberGamePlayerSeason, y = oreb)) %>%
+#   hc_title(text = "Andre Drummond Rebounds")
 ```
 
 Layer
@@ -228,7 +228,7 @@ The highcharts javascript API is expecting a JSON packet to define all y axis op
 
 #### Simple Arguments
 
-Starting simply using one of the simple boolean chart options if we set `gridLineWidth` to 10 it will make the major grid lines to be massive and ugly:
+Starting simply using a couple of the simple boolean chart options we see there we can adjust the `gridLineWidth` to 10 it will make the major grid lines to be massive and change the dash style to "shortdash". We know we can enter thestring "shortdash" as a possible option for the grid line dash style because when we click on that option in the API documentation it says so:
 
 ```{r}
 gamelogs %>%
@@ -238,7 +238,10 @@ gamelogs %>%
   slice(1:10) %>%
   hchart("column", hcaes(x = namePlayer, y = apg)) %>%
   hc_title(text = "Assists Per Game") %>%
-  hc_yAxis(gridLineWidth = 10)
+  hc_yAxis(
+    gridLineWidth = 10,
+    gridLineDashStyle = "shortdash"
+  )
 ```
 
 
@@ -261,7 +264,8 @@ gamelogs %>%
   hchart("column", hcaes(x = namePlayer, y = apg)) %>%
   hc_title(text = "Assists Per Game") %>%
   hc_yAxis(
-    endOnTick = FALSE,
+    gridLineWidth = 10,
+    gridLineDashStyle = "shortdash",
     title = list(
         text = "Assists Per Game",
         align = "high", # Documentation says options are: low, middle or high
@@ -270,11 +274,11 @@ gamelogs %>%
   )
 ```
 
-It's as simple as that. Any argument listed in the highcharts API documentation, whether it's a simple string or number or another nested JSON packet, can be inserted into the appropriate R function call using the right syntax. Failure to name the arguments properly or nest the options appropriately won't cause a fatal error - the options just won't be successfully added to the chart (this can be frustrating debugging at times tbh).
+It's as simple as that. Any argument listed in the highcharts API documentation, whether it's a simple string or number or another nested JSON packet, can be inserted into the appropriate R function call using the right syntax. Failure to name the arguments properly or nest the options appropriately won't cause a fatal error for your chart (in most instances) the options just won't be successfully added to the chart (this can be frustrating debugging at times tbh).
 
 #### Style (CSS)
 
-The style argument is a special case on many highcharts components. In the documentation for yAxis above, only color is listed as an option but it's not nearly the only option. If you've done a little bit more web coding you'll know that what it's referring to is CSS style. Any CSS property can be added to a highcharter component that has this style argument. In this case we'll be defining the CSS properties to adjust on the chart title. A list of CSS properties can be found [here](https://www.w3schools.com/cssref/).
+The style argument is a special case available on many highcharts components. In the documentation for y axis above, only color is listed as an option in the style section but it's not nearly the only option. If you've done a little bit more web coding you'll know that what it's referring to is CSS style. Any CSS property can be added to a highcharter component that has this style argument. In this case we'll be defining the CSS properties to adjust on the chart title. A list of CSS properties can be found [here](https://www.w3schools.com/cssref/).
 
 What to watch for here is that CSS properties are often hyphenated words (like `font-weight`) which won't play perfectly nicely in R lists so you should define properties in your R lists with camel case version of these property names (eg. `fontWeight`). As an example we'll make the chart title bold, slightly larger and the color of the columns like so:
 
@@ -287,14 +291,15 @@ gamelogs %>%
   hchart("column", hcaes(x = namePlayer, y = apg)) %>%
   hc_title(text = "Assists Per Game") %>%
   hc_yAxis(
-    endOnTick = FALSE,
+    gridLineWidth = 10,
+    gridLineDashStyle = "shortdash",
     title = list(
         text = "Assists Per Game",
         align = "high", # Documentation says options are: low, middle or high
         margin = 10, # Number of pixels between the title and the axis line
         style = list(
             fontWeight = "bold",
-            fontSize = '1.4em', # 1.4 x tthe size of the current text
+            fontSize = '1.4em', # 1.4 x tthe size of the default text
             color = "#7cb5ec" # Hex code for the default blue
         )
     )
@@ -325,6 +330,8 @@ Let's try to implement the assists chart in each of these 3 ways but without the
 
 #### Option 1: Simple Array
 
+![](img/hc_columns_data_1.PNG)
+
 The first option says data can be presented as a simple array of values. When we see JSON "array" we should generally think of R lists but sometimes an R vector works too. 
 
 To build a highcharter chart without `hchart()` we need to do it in 2 steps: instantiate a highcharter plot with `highchart()` and then add data and chart type with `hc_add_series()`.
@@ -338,7 +345,7 @@ assists =
   slice(1:10)
 
 apg = assists %>% pull(apg)
-nammePlayer = assists %>% pull(namePlayer)
+namePlayer = assists %>% pull(namePlayer)
 
 highchart() %>%
 hc_add_series(
@@ -347,23 +354,24 @@ hc_add_series(
 )
 ```
 
-So it worked, but given we only passed the chart the assist / game data series it doesn't know what players the values correspond to or anything. We can add these by specifying axis "categories":
+So it worked, but given we only passed the chart the assist / game data series it doesn't know what players the values correspond to or anything. We can add these to the chart by specifying axis "categories" manually:
 
 ```{r}
 highchart() %>%
 hc_add_series(
   type = "column",
   data = apg
-) 
-# hc_xAxis(categories = namePlayer)
+) %>%
+hc_xAxis(categories = namePlayer)
 ```
 
 #### Option 2: Array of Arrays
 
-So this option suggests you can provide the data as an array of x, y pairs. This isn't a perfectly natural data structure for R but we can construct a list of x, y pairs from a dataframe with the help of the `list_parse()` function exported with highcharter.
+![](img/hc_columns_data_2.PNG)
+
+So this option suggests you can provide the data as an array of x, y pairs. This isn't a perfectly natural data structure for R but we can construct a list of x, y pairs from a dataframe with the help of the `list_parse2()` function exported with highcharter.
 
 First let's hardcode an example dataseries to see what the data looks like in R:
-
 
 ```{r}
 highchart() %>%
@@ -377,59 +385,124 @@ highchart() %>%
  )
 ```
 
-Notice that the x values haven't been placed on the x Axis but rather appear as the "name" of the column when you hover over it.
+Notice that the x values haven't been placed on the x Axis as we'd like but rather appear as the "name" of the column when you hover over it - this is called the series name.
 
-said when you see array you should think R vector but that doesn't quite work here. What we can create though is a list of 2 R vectors like this:
+Instead of manually we can construct the same list structure for the top 10 players using `list_parse2()`. This function will create a list of length equal to the rows in your dataframe with pairs of values that come from the columns:
 
 ```{r}
- assists =
-   gamelogs %>%
-   group_by(namePlayer) %>%
-   summarise(apg = mean(ast)) %>%
-   arrange(desc(apg)) %>%
-   slice(1:10)
+# Construct the list in the right format
+arrayList2D = 
+  assists %>%
+  list_parse2()
 
- apg = assists %>% pull(apg)
- namePlayer = assists %>% pull(namePlayer)
+# Lets Inspect the first 2 elements
+arrayList2D[1:2]
+```
 
- highchart() %>%
- hc_add_series(
-   type = "column",
-   data = list(
-     list("Tom",2),
-     list("Hannah",3)
-   )
- )
+OK that's what we were looking for let's pass it as the value to the data argument and add the names on as categories to finish it off
+
+```{r}
+highchart() %>%
+hc_add_series(
+  type = "column",
+  data = arrayList2D
+) %>%
+hc_xAxis(categories = namePlayer)
 ```
 
 #### Array of Objects
 
-So here
+![](img/hc_columns_data_3.PNG)
+
+So this is the most general and most frequently viable data specification option for a highcharts series. An array of JSON packets describing all the appropriate properties required (or possible) for the chart. In R this will be a list (array) of named lists. Let's plot it manually first like before to see what is required. We can even pass distinct column colors to illustrate that the named list configures each column:
 
 ```{r}
- # assists =
- #   gamelogs %>%
- #   group_by(namePlayer) %>%
- #   summarise(apg = mean(ast)) %>%
- #   arrange(desc(apg)) %>%
- #   slice(1:10)
- # 
- # hcDF =
- #   assists %>%
- #   mutate(x = 1:n()) %>%
- #   rename(
- #     x = namePlayer,
- #     y = apg
- #     #name = namePlayer
- #   )
- # 
- # highchart() %>%
- # hc_add_series(
- #   type = "column",
- #   data = list_parse(hcDF)
- # )
+highchart() %>%
+ hc_add_series(
+   type = "column",
+   data = list(
+     list(
+       name = "Russell Westbrook",
+       y = 10.5,
+       color = "#5DA271"
+      ),
+     list(
+       name = "John Wall", 
+       y = 8.7,
+       color = "#7DB58D"
+      ),
+     list(
+       name = "Kyle Lowry", 
+       y = 8.6,
+       color = "#A4CBAF"
+     )
+   )
+ )
 ```
 
+To achieve this list structure we use the other list parsing function `list_parse()` which will do the same thing but preserve names. However, we need the column names to match up to the graph dimensions so we first have to rename columns. Best way to understand is to inspect a couple of elements:
+
+```{r}
+arrayListObjects = 
+  assists %>%
+  rename(name = namePlayer, y = apg) %>%
+  list_parse()
+
+arrayListObjects[1:2]
+```
+
+Now passing as data for the series
+
+```{r}
+highchart() %>%
+hc_add_series(
+  type = "column",
+  data = arrayListObjects
+) %>%
+hc_xAxis(categories = namePlayer)
+```
+
+#### `hc_add_series_list()`
+
+So we understand the various ways we can construct the data vectors / lists that can be passed to as the data argument in `hc_add_series()`. The natural extension to this process is that not even just the data is defined by the correctly structured list but the *entire* series specification is enetered as a named list.
+
+Again let's start with the manual harcoded list first
+
+```{r}
+highchart() %>%
+ hc_add_series_list(
+   list(
+     name = "Assists Per Game",
+     type = "column",
+     data = list(
+       list(
+         name = "Russell Westbrook",
+         y = 10.5
+        ),
+       list(
+         name = "John Wall", 
+         y = 8.7
+        ),
+       list(
+         name = "Kyle Lowry", 
+         y = 8.6
+       )
+     )
+    )
+ )
+```
+
+```{r}
+
+   data %>%
+      map(mutate_mapping, hcaes(x = numberGameTeamSeason, y = fg3m), drop = TRUE) %>%
+      map(list_parse)
+```
+
+
+### Conclusion
+
+Hopefully what you should understand after these examples is that highcharts on the javascript side are just giant JSON configuration objects. Even the data is nested within the series slot in the appropriately structured format. On the R side a set of functions and helpers enable you to create this JSON often with only 1 or 2 lines of code. Most of the time you simply pass hchart() a tidy dataframe and let it convert your data into the JSON that will be placed inside the series config. Every now and then, though, and when you need to venture into more complicated chart types (animated charts for example) the data specification won't be simple and you'll need to build the raw data spec list yourself. To do so you need to know how to wrangle lists, likely with purrr, but the most important thing is understanding the structure javascript API needs.
 
 ## Pre-Baked `hchart()` for different R classes
 
