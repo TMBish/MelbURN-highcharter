@@ -62,7 +62,7 @@ I'll be illustrating `highcharter` functionality with an NBA dataset I'll get fr
 
 We'll use the gamelogs (boxscores) from the most recent complete NBA season 2018-19:
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, class.source="language-r"}
 gamelogs = game_logs(seasons = 2019)
 ```
 
@@ -74,7 +74,7 @@ Most (~90%) of your day-to-day charts can be probably written with 2-3 lines of 
 
 A simple `ggplot` of the top 10 scorers in the NBA this year might look like the following:
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, class.source="language-r"}
 gamelogs %>%
   group_by(namePlayer) %>%
   summarise(ppg = mean(pts)) %>%
@@ -88,7 +88,7 @@ This chart, let's be honest here, looks awful. Ggplot needs to do a better job o
 
 Here's the highcharter version of this plot which you'll notice feels extremely similar to above:
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(namePlayer) %>%
   summarise(ppg = mean(pts)) %>%
@@ -108,7 +108,7 @@ There are many chart types available in higcharts which you can see [here](https
 
 #### Column
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(namePlayer) %>%
   summarise(apg = mean(ast)) %>%
@@ -120,7 +120,7 @@ gamelogs %>%
 
 #### Bar
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(namePlayer) %>%
   summarise(apg = mean(ast)) %>%
@@ -132,7 +132,7 @@ gamelogs %>%
 
 #### Scatter
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(namePlayer) %>%
   summarise(orebpg = mean(oreb), drebpg = mean(dreb), trebpg = mean(treb)) %>%
@@ -144,7 +144,7 @@ gamelogs %>%
 
 #### Bubble
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(namePlayer) %>%
   summarise(orebpg = mean(oreb), drebpg = mean(dreb), trebpg = mean(treb)) %>%
@@ -156,7 +156,7 @@ gamelogs %>%
 
 #### Line
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   filter(namePlayer == "Luka Doncic") %>%
   hchart("line", hcaes(x = numberGamePlayerSeason, y = pts)) %>%
@@ -167,7 +167,7 @@ gamelogs %>%
 
 Splines have smoothed edges
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   filter(namePlayer == "Luka Doncic") %>%
   hchart("spline", hcaes(x = numberGamePlayerSeason, y = pts)) %>%
@@ -176,7 +176,7 @@ gamelogs %>%
 
 #### Area
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   filter(namePlayer == "Jonathan Isaac") %>%
   hchart("area", hcaes(x = numberGamePlayerSeason, y = blk)) %>%
@@ -187,7 +187,7 @@ There is an areaspline (smoothed edges) too.
 
 ### Treemap
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   filter(slugTeam == "TOR") %>%
   group_by(namePlayer) %>%
@@ -209,7 +209,7 @@ As you can see from the code for some of these charts highcharter is much like g
 
 Layering series onto the same chart works much like ggplot. It's a little bet less natural as the data object must be supplied each time which prevents big long data into highcharter chanins. The additional layers, added with `hc_add_series()` can be added with exactly the same pattern as your initial `hchart()` call. It's good practice to name your series and you can specifically add them to the legend with the `showInLegend` option.
 
-```{r}
+```{r, class.source="language-r"}
 drum = 
   gamelogs %>%
   filter(namePlayer == "Andre Drummond") %>%
@@ -222,7 +222,7 @@ hchart(drum, "column", hcaes(x = numberGamePlayerSeason, y = dreb), name = "Defe
 
 Series don't have to be the same type either obviously
 
-```{r}
+```{r, class.source="language-r"}
 hchart(drum, "column", hcaes(x = numberGamePlayerSeason, y = dreb), name = "Defensive Boards", showInLegend = TRUE) %>%
   hc_add_series(drum, "areaspline", hcaes(x = numberGamePlayerSeason, y = oreb), name = "Offensive Boards", showInLegend = TRUE) %>%
   hc_add_series(drum, "scatter", hcaes(x = numberGamePlayerSeason, y = treb), name = "Total Boards", showInLegend = TRUE) %>%
@@ -235,33 +235,43 @@ The most important thing to learn about this package is how the relatively undoc
 
 Once you understand this concept you'll no longer be limited by the package documnetation, or Josh Kunst's highcharter showcase website. You'll be able to build many, many different charts with near unlimited customisation.
 
-To illustrate how to write R highcharter code from just the javascript API docuementation we'll isolate a relatively simple component: a chart's y axis.
+To illustrate how to write R highcharter code from just the javascript API documentation we'll isolate a relatively simple component: a chart's y axis.
 
 ### A Simple Example
 
-To customise a highcharter y axis you need to use the `hc_yAxis()` function. Let's have a look at the documentation for that function.
+To customise a highcharter y axis you need to use the `hc_yAxis()` function. Let's have a look at the documentation in R for that function.
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, class.source="language-r"}
 help(hc_yAxis)
 ```
 
 ![](img/hc_yAxis_help.PNG)
 
-There is some example customisation supplied in the exaples which can be very helpful, but is still limited to a few examples. It might not click with you immediately what's required or valid as an input for the `hc_yAxis()` function. How do I know what arguments I can use for this function? Well the answer is always the API documentation. Let's check the actual highcharts API documentation for a highcharts y Axis. You can find it yourself [here](https://api.highcharts.com/highcharts/yAxis) but it looks like this:
+There is some example customisation supplied in the exaples which can be very helpful, but is still limited to a few examples. 
+
+![](img/hc_yAxis_examples.PNG)
+
+However, it might not click with you immediately what's required or valid as an input for the `hc_yAxis()` function. 
+
+* **How do I know what arguments I can use for this function?** 
+
+The answer is always the API documentation. Let's check the actual highcharts API documentation for a highcharts y Axis. You can find it yourself [here](https://api.highcharts.com/highcharts/yAxis) but a screen shot of the page looks like this:
 
 ![](img/yAxis_api_doc.PNG)
 
-The arguments in the green rectangle (there are more than shown) is an exhaustive list of the customisation options for a highcharts y Axis. There are nearly 50 different arguments for a y axis that will change the way your charts looks or works, and you can use any of them (provided highcharter stays up to date) in your R function calls. 
+The arguments in the green rectangle (there are more than shown) is an exhaustive list of the customisation options for a highcharts y Axis. There are nearly 50 different arguments for a y axis that will change the way your charts looks or works. You can use any of them (provided highcharter stays up to date) in your R function calls. 
 
-The highcharts javascript API is expecting a JSON packet to define all y axis options. That is: some options are single strings, some are booleans TRUE / FALSE, some are numbers, but some are arrays of numbers / strings, and some are more JSON packets. Highcharter will make conversion provided you supply the options as an appropriately structured and named R list. 
+* **These don't look like R arguments, how do I write then into my R function?**
+
+The highcharts javascript API is expecting a JSON packet to define all y axis options. In other words: some options are single strings, some are booleans, some are numbers, but some are arrays of numbers or strings, and some are more JSON packets. Highcharter will make conversion provided you supply the options as an appropriately structured and named R list. It's easiest to see this in an example.
 
 #### Simple Arguments
 
-Starting simply using a couple of the simple boolean chart options we can adjust the `gridLineWidth` to 10 which will make the major grid lines extremely thick and change the dash style to "shortdash". We know we can enter the string "shortdash" as a possible option for the grid line dash style because when we click on that option in the API documentation it links us to another page which shows us the valid options
+Starting simply using a couple of the simple boolean chart options we can adjust the `gridLineWidth` to 10 which will make the major grid lines extremely thick and change the dash style to "shortdash". We know we can enter the string "shortdash" as a possible option for the grid line dash style because when we click on that option in the API documentation it links us to another page which shows us the valid options:
 
 ![](img/yaxis_dash_style.PNG)
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(namePlayer) %>%
   summarise(apg = mean(ast)) %>%
@@ -287,7 +297,7 @@ Notice the dropdown icons and nested arguments. They tell us that the axis title
 
 When using the documentation all you should think is when I see a nested JSON packet with a dropdown marker / open curly braces I need to start a new R list.
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(namePlayer) %>%
   summarise(apg = mean(ast)) %>%
@@ -314,7 +324,7 @@ The style argument is a special case available on many highcharts components. In
 
 What to watch for here is that CSS properties are often hyphenated words (like `font-weight`) which won't play perfectly nicely in R lists so you should define properties in your R lists with camel case version of these property names (eg. `fontWeight`). As an example we'll make the chart title bold, slightly larger and the color of the columns like so:
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(namePlayer) %>%
   summarise(apg = mean(ast)) %>%
@@ -348,17 +358,17 @@ Building your own nested lists to bypass the normal `hchart()` approach is a ver
 
 Let's check the API documentation for a column graph. We'll find the specification for each chart type under the `series >` sub header.
 
-The specification looks like the following
+What we're interested in is the `series > column > data` entry which tells us the viable formats to enter the data for a column chart:
 
 ![](img/series_column.PNG)
 
-What we're interested in is the `series > column > data` entry which tells us the viable formats to enter the data for a column chart. The documentation says we can enter the data in 3 different ways:
+The documentation says we can enter the data in 3 different ways:
 
 1. A simple array of numerical values
 2. A array of arrays with x, y value pairs
-3. An array of objects with JSON packets defining a single data point
+3. An array of objects (JSON packets) with each object defining a single data point
 
-Let's try to implement the assists chart in each of these 3 ways but without the help of `hchart()`
+Let's try to implement the assists chart in each of these 3 ways but without the help of `hchart()`.
 
 #### Option 1: Simple Array
 
@@ -366,9 +376,8 @@ Let's try to implement the assists chart in each of these 3 ways but without the
 
 The first option says data can be presented as a simple array of values. When we see JSON "array" we should generally think of R lists but sometimes an R vector works too. 
 
-To build a highcharter chart without `hchart()` we need to do it in 2 steps: instantiate a highcharter plot with `highchart()` and then add data and chart type with `hc_add_series()`.
-
-```{r}
+```{r, class.source="language-r"}
+# Get list of top-10 league leaders in assists
 assists = 
   gamelogs %>%
   group_by(namePlayer) %>%
@@ -376,15 +385,17 @@ assists =
   arrange(desc(apg)) %>%
   slice(1:10)
 
+# Pull out names and assists / game as vectors
 apg = assists %>% pull(apg)
 namePlayer = assists %>% pull(namePlayer)
 
+# The Assists Per Game Vector
 apg
 ```
 
-The assists per game vector.
+To build a highcharter chart without `hchart()` we need to do it in 2 steps: instantiate a highcharter plot with `highchart()` and then add data and chart type with `hc_add_series()`.
 
-```{r}
+```{r, class.source="language-r"}
 highchart() %>%
 hc_add_series(
   type = "column",
@@ -392,9 +403,9 @@ hc_add_series(
 )
 ```
 
-So it worked, but given we only passed the chart the assist per game data series it doesn't know what players the values correspond to. We can add these to the chart in a second step by specifying axis "categories" manually:
+So it worked, but given we only passed the chart the assist per game data series it doesn't know what players the values correspond to. Referencing the option 1 specification abover, we can add the player names to the chart in a second step by specifying axis "categories" manually:
 
-```{r}
+```{r, class.source="language-r"}
 highchart() %>%
 hc_add_series(
   type = "column",
@@ -409,9 +420,11 @@ hc_xAxis(categories = namePlayer)
 
 So this option suggests you can provide the data as an array of x, y pairs. This isn't a perfectly natural data structure for R but we can construct a list of x, y pairs from a dataframe with the help of the `list_parse2()` function exported with highcharter. The reason this function has been created alongside these charting functions is exactly for this purpose. You often need to construct these specific list types if you're building charts this way.
 
-First let's hardcode an example data series to see what the data looks like in R:
+**Hardcode List**
 
-```{r}
+It's helpful to see the R code for each of these lists before we let a blackbox function build them on our behalf so we'll repeat this pattern for the rest of these chart types. First let's hardcode an example data series to see what the data looks like in R:
+
+```{r, class.source="language-r"}
 highchart() %>%
  hc_add_series(
    type = "column",
@@ -425,9 +438,11 @@ highchart() %>%
 
 Notice that the x values (assuming these are x,y pairs) haven't been placed on the x axis as we'd like but rather appear as the "name" of the column when you hover over it - this is called the series name.
 
+**Generate List**
+
 Instead of manually hardcoding the list in the right structure we can construct the same structure for the top 10 players using `list_parse2()`. This function will create a list of length equal to the rows in your dataframe with pairs of values that come from the columns:
 
-```{r}
+```{r, class.source="language-r"}
 # Construct the list in the right format
 assistsListXYPairs = 
   assists %>%
@@ -439,7 +454,7 @@ assistsListXYPairs[1:2]
 
 That's exactly what we were looking for, let's pass it as the value to the data argument and add the names on as categories to finish it off
 
-```{r}
+```{r, class.source="language-r"}
 highchart() %>%
 hc_add_series(
   type = "column",
@@ -452,9 +467,13 @@ hc_xAxis(categories = namePlayer)
 
 ![](img/hc_columns_data_3.PNG)
 
-This is the most general and most frequently viable data specification option for a highcharts series. An array of JSON packets describing all the appropriate properties required (or possible) for the chart. In R this will be a list (array) of named lists. Let's plot it manually first like before to see what is required. We can even pass distinct column colors to illustrate that the named list configures each column independently:
+This is the most general and most frequently viable data specification option for a highcharts series. An array of JSON packets describing all the appropriate properties required (or possible) for the chart. In R this will be a list (array) of named lists.
 
-```{r}
+**Hardcode List**
+
+Again let's harcode the named list manually to see what it looks like. We can even pass distinct column colors to illustrate that the named list configures each column independently:
+
+```{r, class.source="language-r"}
 highchart() %>%
  hc_add_series(
    type = "column",
@@ -478,9 +497,12 @@ highchart() %>%
  )
 ```
 
+
+**Generate List**
+
 To achieve this list structure we use the other list parsing function `list_parse()` which will do the same thing as `list_parse2()` but preserve the names on the list. However, we do need the appropriate names inside each point specification so the column names to match up to the graph dimensions. We must first rename the columns. Best way to understand is to inspect a couple of elements:
 
-```{r}
+```{r, class.source="language-r"}
 assistsListConfig = 
   assists %>%
   rename(name = namePlayer, y = apg) %>%
@@ -491,7 +513,7 @@ assistsListConfig[1:2]
 
 Now passing as data for the series
 
-```{r}
+```{r, class.source="language-r"}
 highchart() %>%
 hc_add_series(
   type = "column",
@@ -502,16 +524,20 @@ hc_xAxis(categories = namePlayer)
 
 #### `hc_add_series_list()`
 
-So we understand the various ways we can construct the data vectors / lists that can be passed to as the data argument in `hc_add_series()`. The natural extension to this process is that not just the data is defined by the correctly structured list but the *entire* series specification is input as a named list. That's what `hc_series_add_list()` expects - a single named list defining the entire series config.
+So we understand the various ways we can construct the data vectors / lists that can be passed to as the data argument in `hc_add_series()`. The natural extension to this process is that not just the data is defined by a correctly structured nameed list but the *entire* series specification is input as a named list. That's what `hc_series_add_list()` expects - a single named list defining the entire series config.
+
+* **Remember, the data, is just one component of the configuration of a series**
+
+**Hardcode List**
 
 Again let's start with the manual harcoded list first
 
-```{r}
+```{r, class.source="language-r"}
 highchart() %>%
  hc_add_series_list(
-   # Parent list containing n series
+   # Parent list containing a set of N series
    list(
-     # Series
+     # An Individual Series Config
      list(
        name = "Assists Per Game",
        type = "column",
@@ -529,16 +555,18 @@ highchart() %>%
            y = 8.6
          )
        )
-      )
+     )
    )
  )
 ```
 
 Everything about the series (name, type, data) is defined in a named list. This gives us the most flexibility for advanced charts, but the challenge is obviously constructing this deeply nested named list in exactly the right way. Like we've seen the package provides as with a number of helpers to make this more feasible however it's normally overkill for most tasks.
 
+**Generate List**
+
 Let's try to do the same chart again. 
 
-```{r}
+```{r, class.source="language-r"}
 seriesConfigDF = 
   assists %>%
   rename(name = namePlayer, y = apg) %>%
@@ -555,18 +583,19 @@ seriesConfigDF
 So for us to use `list_parse()` appropriately here we need a single row which defines our series. On that row at the top level we need the series name, the series type and then a list column which contains the correctly structured list which we saw could be accomplished using the `list_parse()` function on the renamed dataframe. That's what we have so now we can use `list_parse()` again on this dataframe to correctly structure the list and plot that series config list.
 
 
-```{r}
+```{r, class.source="language-r"}
 seriesConfig = 
   seriesConfigDF %>%
   list_parse()
 
 highchart() %>%
- hc_add_series_list(seriesConfig) 
+ hc_add_series_list(seriesConfig) %>%
+  hc_xAxis(categories = namePlayer)
 ```
 
 Now, you might be thinking that's a lott of work and complexity to plot this simple chart. Let's show the power of this approach by extending this aprroach to multiple series. Notice the reasonably involved R required to build the right named list, but after that's achieved there's no highcharter configuration required. Hopefully this simple example will help you when you're building your own deeply nested named lists for advanced attempts
 
-```{r}
+```{r, class.source="language-r"}
 seriesConfig = 
   gamelogs %>%
   group_by(namePlayer) %>%
@@ -588,12 +617,13 @@ seriesConfig =
   list_parse()
 
 highchart() %>%
- hc_add_series_list(seriesConfig) 
+ hc_add_series_list(seriesConfig) %>%
+ hc_xAxis(categories = namePlayer)
 ```
 
 ### Conclusion
 
-Hopefully what you should understand after these examples is that highcharts on the javascript side are just giant JSON configuration objects. Even the data is nested within the series > data slot in the appropriately structured format. On the R side a set of functions and helpers enable you to create this JSON often with only 1 or 2 lines of code. Most of the time you simply pass hchart() a tidy dataframe and let it convert your data into the JSON that will be placed inside the series config. Every now and then, though, and when you need to venture into more complicated chart types (animated charts for example) the data specification won't be simple and easy to construct with hchart() and you'll need to build the raw data specification list yourself. To do so you need to know how to wrangle lists, likely with purrr, but the most important thing is understanding the structure javascript API needs, from there you just fiddle around with purrr functions till your output list looks right.
+Hopefully what you should understand after these examples is that highcharts on the javascript side are just giant JSON configuration objects. Even the data is nested within the `series > data` slot in the appropriately structured format. On the R side a set of functions and helpers enable you to create this JSON often with only 1 or 2 lines of code. Most of the time you simply pass `hchart()` a tidy dataframe and let it convert your data into the JSON that will be placed inside the series config. Every now and then, though, and when you need to venture into more complicated chart types (animated charts is an example) the data specification won't be simple and easy to construct with `hchart()` and you'll need to build the raw data specification list yourself. To do so you need to know how to wrangle lists, likely with purrr, but most importantly: you need to understand the structure the javascript API needs expects. Knowing that you just fiddle around with purrr functions till your output list looks exactly right.
 
 ## Pre-Baked `hchart()` for different R classes
 
@@ -607,13 +637,13 @@ To see how this works lets have a look at a few examples of the functionality th
 
 I want to view histograms or density plots of numeric vectors very regularly. This is a simple one liner in highcharter
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>% pull(pts) %>% hchart()
 ```
 
 hchart() has been passed a simple numeric vector here (the points scored by players in all 19-20 NBA games), and decided that the appropriate plot is a histogram. Like other highcharts it is a highcharts object that supports the normal layering and customisation so we can add a few lines to makes the chart more readable:
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>% pull(pts) %>% 
   hchart(name = "Player Points") %>%
   hc_xAxis(title = list(text = "Points Scored")) %>%
@@ -625,7 +655,7 @@ gamelogs %>% pull(pts) %>%
 
 Similarly if we were interested in this plot but in a density form (smoothed & proportion of total cases) we can simply pass hchart() a density object created by the base density() function
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>% 
   pull(pf) %>% 
   density() %>%
@@ -639,7 +669,7 @@ gamelogs %>%
 
 Like the numeric vector example suppling hchart() with a character vector or factor vector will create a plot of the value counts within the vector.
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>% pull(slugTeamWinner) %>% hchart(name="Total Winning Games Per Player")
 ```
 
@@ -647,7 +677,7 @@ gamelogs %>% pull(slugTeamWinner) %>% hchart(name="Total Winning Games Per Playe
 
 To show a more elaborate implementation a forecast created with the forecast package is plotted automatically as follows
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   filter(namePlayer == "Al Horford") %>%
   select(pts) %>%
@@ -661,7 +691,7 @@ gamelogs %>%
 
 Plotting a correlation matrix from a base R correlation analysis is also simple and easy. Notice the huge presentation and clutter advantage of interactivity for a chart type like this.
 
-```{r}
+```{r, class.source="language-r"}
 
 gamelogs %>%
   select(pts, minutes, treb, dreb, oreb) %>%
@@ -684,7 +714,7 @@ Splitting charts vertically is easy with the concept of multiple axes. Axes can 
 You can either specify the options for each yAxis with named R lists like the following. When creating the initial series or adding additional series you also need to define which axis you want to chart the data against. You do this with a y axis index, obsersving that javascript is a language where indicies start at 0.
 
 2 Axes:
-```{r}
+```{r, class.source="language-r"}
 harden = 
   gamelogs %>%
   filter(namePlayer == "James Harden") %>%
@@ -701,7 +731,7 @@ hchart(harden, "column", hcaes(x = numberGameTeamSeason, y = pts), yAxis = 0) %>
 
 With 3 axes we need to specify the top of the axis (the % of the way down the plot area) and how tall we want the axis to be. If we want 3 equal rows then each axis should be 33% (roughly) of the plot area and their starting points should be 0% (top) 33% the way down and 66% of the way down.
 
-```{r}
+```{r, class.source="language-r"}
 hchart(harden, "column", hcaes(x = numberGameTeamSeason, y = pts), yAxis = 0) %>%
   hc_yAxis_multiples(
     list(title = list(text = "Points"), top = "0%", height = "33%"),                     # specify details of axis 1 (0 index)
@@ -714,7 +744,7 @@ hchart(harden, "column", hcaes(x = numberGameTeamSeason, y = pts), yAxis = 0) %>
 
 However, you'll notice some weird spacing issues on the 3rd axis, that's due to some little fidgety stuff about the heights and sizes of each axis. The helper function `create_yaxis` can create these axis specifications for you with a more simple function call. You could create the same chart like:
 
-```{r}
+```{r, class.source="language-r"}
 hchart(harden, "column", hcaes(x = numberGameTeamSeason, y = pts), yAxis = 0) %>%
   hc_yAxis_multiples(
     create_yaxis(
@@ -732,7 +762,7 @@ Multiple y axes is not our only option for grids thankfully. We can simply chain
 
 Let's produce a similar version of this chart using that approach to see how it would work. (Note this R is a little big trickier than what we've seen previously. The output of this `group_map` is a list of highcharter charts. Check the `group_map` documentation if you're confused about how this worked.)
 
-```{r}
+```{r, class.source="language-r"}
 hardenLong = 
   harden %>%
   pivot_longer(-numberGameTeamSeason)
@@ -752,7 +782,7 @@ hardenLong %>%
 
 Axes can be customised in numerous ways. Most frequently I'll simply be changing the axis title, adding unit formatting to the axis labels, changing the plot grid lines, and sometimes removing the axis all together.
 
-```{r}
+```{r, class.source="language-r"}
 cyan = "#2EC4B6" # Nice cyan
 
 teamFreeThrows = 
@@ -799,7 +829,7 @@ Just a few notes to make this understandable if you haven't used javascript befo
 * Strings can be concatenated with the `+` operator like python
 * The `this.XXX` notation is very pervasive javascript concept which is the current object decided by the current execution context, so in this example it would be the axis object which contains, among other things a `.value`
 
-```{r}
+```{r, class.source="language-r"}
 teamFreeThrows = 
   teamFreeThrows %>%
   hc_yAxis(
@@ -820,7 +850,7 @@ teamFreeThrows
 
 highcharts have a title and a subtitle element which you can set like following. We can style the titles like we've seen before:
 
-```{r}
+```{r, class.source="language-r"}
 teamFreeThrows = 
   teamFreeThrows %>%
   hc_title(
@@ -845,7 +875,7 @@ The axis title and the chart title now look a little cramped. You can fully cust
 
 So we want to add a little more margin to the top of the chart.
 
-```{r}
+```{r, class.source="language-r"}
 teamFreeThrows = 
   teamFreeThrows %>%
   hc_chart(
@@ -861,7 +891,7 @@ teamFreeThrows
 
 Different fonts can be added to individual sections or a new default font family can be added to all elements on the chart. Here I'll update the font family on the chart to a google font by simply referring to it's name:
 
-```{r}
+```{r, class.source="language-r"}
 teamFreeThrows = 
   teamFreeThrows %>%
   hc_chart(
@@ -885,7 +915,7 @@ Another slight ding for highcharter is the default tooltip is pretty awful. So I
 
 This is another area where the use of the formatter is preferred so you have to write a little javascript function to define your output. We'll discuss further down how you can be a little smarter about this and push most of the logic into your R code to minimise the amount of javascript you have to write:
 
-```{r}
+```{r, class.source="language-r"}
 teamFreeThrows %>%
   hc_tooltip(
     useHTML = TRUE,                              # The output should be understood to be html markup
@@ -903,7 +933,7 @@ teamFreeThrows %>%
   )
 ```
 
-So you might notice that even though we didn't define the team name (nameTeam) as a dimension of the plot it was still accessible through the `this.point.[input dataframe colume]` accessor in the tooltip. This is extremely handy and we'll be able to use this to make the above tooltip easier to construct later in this document. 
+So you might notice that even though we didn't define the team name (nameTeam) as a dimension of the plot it was still accessible through the `this.point.[input dataframe column]` accessor in the tooltip. This is extremely handy and we'll be able to use this to make the above tooltip easier to construct later in this document. 
 
 ### Plot Area
 
@@ -911,7 +941,7 @@ The plot area of a chart can be customised with colors, color gradients, images 
 
 Color can be customised in `hc_chart()` options:
 
-```{r}
+```{r, class.source="language-r"}
 lakersGold = "#FDB927"
 lakersPurple = "#552583"
 
@@ -927,7 +957,7 @@ gamelogs %>%
 
 Looks awful in this instance but that's how we could do it. Let's try a color gradient
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   filter(namePlayer == "LeBron James") %>% 
   hchart("column", hcaes(x = numberGameTeamSeason, y = pts), color = lakersGold) %>%
@@ -946,7 +976,7 @@ gamelogs %>%
 
 Still ugly. Let's make a slightly different lakers theme with a few more color specifications on the axis labels and titles, and a font which is closer to the lakers font:
 
-```{r}
+```{r, class.source="language-r"}
 baseBronChart = 
   gamelogs %>%
   filter(namePlayer == "LeBron James") %>% 
@@ -996,7 +1026,7 @@ baseBronChart
 
 Similarly we could add a picture as the entire background to the plot area to give the viewer an even faster recognition of what player this chart is visualising:
 
-```{r}
+```{r, class.source="language-r"}
 bronHeadshot = gamelogs %>% filter(namePlayer == "LeBron James") %>% head(1) %>% pull(urlPlayerPhoto)
 
 baseBronChart %>%
@@ -1007,7 +1037,7 @@ baseBronChart %>%
 
 Lookin good.. Using the same approach would could simply look up a relevant gif and insert it's url as the background image like follows:
 
-```{r}
+```{r, class.source="language-r"}
 baseBronChart %>%
   hc_chart(
     plotBackgroundImage = "https://media1.giphy.com/media/lJ88OkVp8NdOP74ucu/giphy.gif" # Add Bron's headshot to the plot area
@@ -1018,7 +1048,7 @@ baseBronChart %>%
 
 Instead of setting the entire background image to be a lebron gif or image I could utilise the annotation functionality within highcharts. You can add annotations with the specifications at this [link](https://api.highcharts.com/highcharts/annotations). You can add a single annotation with `hc_add_annotation` or multiple with distinct lists with `hc_add_annotations`. Annotation can be shapes, text or image links.
 
-```{r}
+```{r, class.source="language-r"}
 baseBronChart %>%
   hc_add_annotation(
     shapes = list(
@@ -1026,8 +1056,8 @@ baseBronChart %>%
       src = bronHeadshot,        # Link to the official lebron headshot image
       width = 180, height = 131, # Correct image aspect ratio for these headshots
       point = list(
-        x = 55, xAxis = 0,       # Unit 55 (game number) on the x axis
-        y = 60, yAxis = 0        # Unit 60 (points) on the y axis
+        x = 37, xAxis = 0,       # Unit 37 (game number) on the x axis
+        y = 20, yAxis = 0        # Unit 20 (points) on the y axis
       )
     )
 )
@@ -1035,7 +1065,7 @@ baseBronChart %>%
 
 or the gif we used above:
 
-```{r}
+```{r, class.source="language-r"}
 baseBronChart %>%
   hc_add_annotation(
     shapes = list(
@@ -1043,8 +1073,8 @@ baseBronChart %>%
       src = "https://media1.giphy.com/media/lJ88OkVp8NdOP74ucu/giphy.gif",  # Link to gif
       width = 180, height = 131, # Correct image aspect ratio for these headshots
       point = list(
-        x = 55, xAxis = 0,       # Unit 55 (game number) on the x axis
-        y = 60, yAxis = 0        # Unit 60 (points) on the y axis
+        x = 37, xAxis = 0,       # Unit 37 (game number) on the x axis
+        y = 22, yAxis = 0        # Unit 20 (points) on the y axis
       )
     )
 )
@@ -1056,7 +1086,7 @@ These annotations can be easily added and placed programatically (smartly in the
 
 Plot lines or bands can be a great way to highlight things on the chart you want to call the users attention to. In the above Lebron James points column chart we know the big gap in the middle is explained by Lebron experiencing his first significant injury of his career in this season. We should spefically call that out to the viewer as it's an obvious anomoly with the data shown. It makes sense to do that with a plot area in this example. We could also add his season average points to the line as a reference point for the columns
 
-```{r}
+```{r, class.source="language-r"}
 bronPPG = gamelogs %>% filter(namePlayer == "LeBron James") %>% summarise(mean(pts, na.rm = TRUE)) %>% pull()
 
 baseBronChart = 
@@ -1101,7 +1131,7 @@ baseBronChart
 
 Data labels can easily be added to charts of all types. Highcharts data labels also have some built in smarts that prevent display when labels are too crowded. Options can be set for individual series or for all series types inside the `hc_plotOptions()` function. Given we've already added the series layer to this chart let's just specify that all column charts should have data labels like following:
 
-```{r}
+```{r, class.source="language-r"}
 baseBronChart %>%
   hc_plotOptions(
     column = list(
@@ -1120,7 +1150,7 @@ Even though highcharts has been smart enough to remove some labels where they ha
 
 If you're comfortable writing more involved javascript callback functions you can leverage some of the many properties of highcharts series to accomplish goals like this. I don't do a lot of this but only because my javascript is poor. For example there is a `.dataMax` and a `.dataMin` property of a highcharts series which I could access to check whether or not this point is equal to this value and plot a label if required:
 
-```{r}
+```{r, class.source="language-r"}
 baseBronChart %>%
   hc_plotOptions(
     column = list(
@@ -1148,7 +1178,7 @@ There are many other properties of series and points that you could access for m
 
 One great highcharter tip is using your R dplyr / glue skills to build HTML that will be parsed to highcharts to render. This will save you a lot of time and prevent you from having to write longer more involved javascript callback functions. Suppose I want to create a nice label for Lebron's high and low scoring games including the date of the game and the opponent, I can do that using dplyr. I'll have to go back to the starting point because I'm augmenting the chart data:
 
-```{r}
+```{r, class.source="language-r"}
 # New dataset with datalabel created using dplyr
 bronChartData = 
   gamelogs %>%
@@ -1167,7 +1197,7 @@ bronChartData %>% count(hc_dataLabel)
 
 Let's rebuild the whole chart and add a reference to these strings as the labels. Now all I need to write in the callback is that I want to return the exact value of the label (`hc_dataLabel`) that I've prebaked in my dplyr chain. Notice also the slight html markup that will display the opponent team and date of game in italics.
 
-```{r}
+```{r, class.source="language-r"}
 baseBronChart = 
   bronChartData %>%
   hchart(
@@ -1249,7 +1279,7 @@ baseBronChart
 
 The exact same approach can be used to define a more advanced tooltip specification. Let's say I wanted to the tooltip to give more information about Lebron's game for each of these bars.
 
-```{r}
+```{r, class.source="language-r"}
 bronChartData = 
   gamelogs %>%
   filter(namePlayer == "LeBron James") %>%
@@ -1278,7 +1308,7 @@ bronChartData =
 ```
 
 
-```{r}
+```{r, class.source="language-r"}
 baseBronChart = 
   bronChartData %>%
   hchart(
@@ -1370,7 +1400,7 @@ Not yet complete...
 
 Dates and datetimes work well but require a little bit more understanding. Let's look at the series of # of NBA games for the dates of the 19-20 season
  
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(dateGame) %>%
   summarise(games = n_distinct(idGame)) %>%
@@ -1392,7 +1422,7 @@ year: '%Y'
 
 So it looks like given our chart is about 6 months of data it has chosen the week units. We can change the default for this type by customising the unit formats in the `.dateTimeLabelFormats` property of the x axis
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(dateGame) %>%
   summarise(games = n_distinct(idGame)) %>%
@@ -1407,7 +1437,7 @@ gamelogs %>%
 
 With date axes it's also natural to add a date filter on the x axis. There are many options including the awesome navigator which I can add like this:
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(dateGame) %>%
   summarise(games = n_distinct(idGame)) %>%
@@ -1422,7 +1452,7 @@ Notice how the axis labels are dynamic and update the format to the appropriate 
 
 I can also add another filter element called a rangeSelector whcih gives me some more dynamic filtering functionality
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(dateGame) %>%
   summarise(games = n_distinct(idGame)) %>%
@@ -1438,7 +1468,7 @@ gamelogs %>%
 
 The last thing you might find difficult with this chart type is adding annotations or plot lines. On a date or datetime axis the value / location of a plotline needs to be converted to a unix timestamp with highcharters `datetime_to_timestamp()` function. Let's add a line for christmas day games using the second method.
 
-```{r}
+```{r, class.source="language-r"}
 gamelogs %>%
   group_by(dateGame) %>%
   summarise(games = n_distinct(idGame)) %>%
@@ -1467,7 +1497,7 @@ gamelogs %>%
 
 To work with datetimes we'll need to get a slightly different dataset:
 
-```{r}
+```{r, class.source="language-r"}
 game = 
   gamelogs %>%
   group_by(idGame, dateGame) %>%
@@ -1487,7 +1517,7 @@ playByPlay %>% head(2)
 
 Let's try to plot the home and away score of this game at the different timestamps:
 
-```{r}
+```{r, class.source="language-r"}
 playByPlay %>% 
   filter_at(vars(matches("^score")), all_vars(!is.na(.))) %>%
   distinct(scoreAway, scoreHome, time) %>%
@@ -1497,7 +1527,7 @@ playByPlay %>%
 
 No good, that's because hchart doesn't recognise datetimes natively we first have to convert to unix timestamps
 
-```{r}
+```{r, class.source="language-r"}
 playByPlay %>% 
   filter_at(vars(matches("^score")), all_vars(!is.na(.))) %>%
   distinct(scoreAway, scoreHome, time) %>%
@@ -1508,7 +1538,7 @@ playByPlay %>%
 
 But now we're in strife cause our x axis units are unix timestamps which is unintelligle to us. We just need to add some formatting
 
-```{r}
+```{r, class.source="language-r"}
 playByPlay %>% 
   filter_at(vars(matches("^score")), all_vars(!is.na(.))) %>%
   distinct(scoreAway, scoreHome, time) %>%
@@ -1525,7 +1555,7 @@ playByPlay %>%
 
 highcharter comes with a number of nice out of the box themes. Let's take a look at them all:
 
-```{r}
+```{r, class.source="language-r"}
 themes = 
   str_subset(lsf.str("package:highcharter"), "hc_theme_") %>%
   str_subset("_merge", negate = TRUE)
@@ -1554,7 +1584,7 @@ Some gooduns in there, how bout making your own theme
 
 You can create custom themes from scratch or use one of these themes as a base and merge in some changes. I like the elementary theme and I also like circular line markers with white borders. I could create a New Orleans Pelicans theme by combining these two components, adding a new default font, and adding the Pelicans color palette. Note: creating a theme from scratch you just need the second component of the merge below.
 
-```{r}
+```{r, class.source="language-r"}
 hc_theme_pelicans = 
   hc_theme_merge(
     hc_theme_elementary(),
@@ -1597,11 +1627,28 @@ gamelogs %>%
   hc_add_theme(hc_theme_pelicans)
 ```
 
-## Advanced Charts
+## Harder Charts / Showcase
 
-### Showcase: Packed Bubble
+I've spent a few hours attempting some more ambitious charts to show you a fraction of what's possible with this package. The R list wrangling on a few of these charts is a little bit of a mind fuck sometimes so I wouldn't dwell too much on that to begin with. Just have a look at the final list / dataframe structure and how it's getting ingested by the highcharter functions. A lot of the time I'll just repurpose the list wrangling I've used for other charts or from stack-overflow or from Kunsts examples / blog itself as a starting point.
 
-```{r}
+Let's start by making a custom theme that we'll style this chart set with
+
+```{r, class.source="language-r"}
+hc_theme_hcCookbook = 
+  hc_theme_merge(
+    hc_theme_smpl(),
+    hc_theme(
+      colors = list("#f94144","#f3722c","#f8961e","#f9c74f","#90be6d","#43aa8b","#577590"),
+      chart = list(style = list(fontFamily = "Roboto")),
+      title = list(style = list(fontFamily = "Roboto"), align = "left"),
+      subtitle = list(style = list(fontFamily = "Roboto"), align = "left")
+    )
+  )
+```
+
+### Packed Bubble
+
+```{r, class.source="language-r"}
 
 # Top 5 3 Point Shooting Teams By Makes
 fg3m_top5 = 
@@ -1611,17 +1658,17 @@ fg3m_top5 =
   arrange(desc(total_fg3m)) %>%
   slice(1:5)
 
-# FG3M from those teams with FG3M 50+
+# FG3M / game from those teams with FG3M 50+
 fg3m_seasonTotal = 
   gamelogs %>%
   inner_join(fg3m_top5, by = "nameTeam") %>%
   group_by(namePlayer, nameTeam) %>%
-  summarise(fg3m = sum(fg3m)) %>%
+  summarise(fg3m = sum(fg3m), games = n()) %>%
   filter(fg3m >= 50) %>%
+  mutate(fg3m_pg = fg3m / games) %>%
   ungroup()
 
 # Nested HC List Data - FG3M by Team's Game Number
-# ------ HARDER ---------
 fg3m_byGameNumber = 
   gamelogs %>%
   inner_join(fg3m_top5, by = "nameTeam") %>%
@@ -1634,57 +1681,44 @@ fg3m_byGameNumber =
       map(list_parse)
   ) %>%
   select(-data)
-# ------ END HARDER ---------
 
-# Get NBA Team Metadata : including Team Hex Colors
-nbastatR::assign_nba_teams()
-
-chartData = 
+threePointBubbleData = 
   fg3m_seasonTotal %>%
-  left_join(fg3m_byGameNumber) %>%
-  left_join(df_dict_nba_teams %>% select(nameTeam, colorsTeam)) %>%
-  mutate(
-    colorsTeam = 
-      colorsTeam %>%
-      str_extract("[a-z0-9\\#]+(?=\\,)")
-      # str_split(",", simplify = TRUE) %>%
-      # pluck(1)
-  )
+  left_join(fg3m_byGameNumber)
 
-chartData %>% head(2)
-
+threePointBubbleData %>% head(2)
 ```
   
-```{r}
-chartData %>%
+```{r, class.source="language-r"}
+threePointBubbleData %>%
   hchart(
     "packedbubble", 
-    hcaes(value = fg3m, name = namePlayer, group = nameTeam), 
-          #color = colorsTeam),
+    hcaes(value = fg3m_pg, name = namePlayer, group = nameTeam), 
     dataLabels = list(
       enabled = TRUE,
       format = '{point.name}',
+      filter = list(
+        property = "y",
+        operator = ">", 
+        value = 1.75
+      ),
       style = list(
         textOutline = "none",
-        color = "#000000",
+        #$color = "#000000",
         fontWeight = "normal"
       )
-    ),
-    colorAxis = 1
+    )
   ) %>%
   hc_plotOptions(
     packedbubble = list(
-      minSize = '10px',
-      maxSize = '100px',
-      #zMin = 0,
-      #zMax = 1000,
+      minSize = '5px',
+      maxSize = '90px',
       layoutAlgorithm = list(
-        #gravitationalConstant =  0.05,
+        gravitationalConstant =  0.05,
         bubblePadding = 10,
         splitSeries = TRUE,
         seriesInteraction = TRUE,
         maxIterations = 500
-        #parentNodeLimit = TRUE
       )
     )
   ) %>%
@@ -1694,28 +1728,235 @@ chartData %>%
     pointFormatter = tooltip_chart(
       accesor = "madeFG3M_byGame",
       hc_opts = list(
-        chart = list(type = "column"),
+        chart = list(type = "area"),
         yAxis = list(title = list(text = "FG3M")),
-        xAxis = list(title = list(text = "Game #"))
+        xAxis = list(title = list(text = "Game #")),
+        plotOptions = list(area = list(fillOpacity = 0.2))
       )
     )
   ) %>%
-  #hc_add_theme(hc_theme_elementary()) %>%
-  #hc_colors(chartData%>% pull(colorsTeam) %>% unique()) %>%
-  hc_title(text = "Total 3 Point Makes 19-20") %>%
-  hc_subtitle(text = "Top 5 3PM Teams | showing players with 50+ 3PM on the season")
+  hc_add_theme(hc_theme_hcCookbook) %>%
+  hc_title(text = "3PT Makes Per Game 19-20") %>%
+  hc_subtitle(text = "Top 5 3PM Teams | showing players with 50+ 3PM on the season") %>%
+  hc_size(height = 750)
+```
 
+### Donut Tooltip
+
+Full diclosure this isn't my idea, I just think it's an awesome graph. Josh Kunst's version of this chart is located on his blog here: http://jkunst.com/blog/posts/2019-02-04-using-tooltips-in-unexpected-ways/
+
+So for my version I'd like to plot scoring efficiency for each team as measured by True Shooting %. I'll use a donut arrangement not to present any data dimension but to just layout the teams in a ring. The visual will be presented on hover over in the form of a tooltip located in the center of the donut. Let's roll
+
+```{r, class.source="language-r"}
+# Get NBA Team Metadata : including Team Hex Colors
+nbastatR::assign_nba_teams()
+
+# Create a data frame with Team Name and Color for the outer ring
+donutBase = 
+  df_dict_nba_teams %>% 
+  filter(isNonNBATeam == 0) %>%
+  select(nameTeam, colorsTeam) %>%
+  mutate(
+    primary_color = 
+      colorsTeam %>%
+      str_extract("[a-z0-9\\#]+(?=\\,)")
+  )
+
+# Create a True Shooting Summary For Each Player with more than 500 minutes
+trueShootingSummary_df = 
+  gamelogs %>%
+  group_by(namePlayer, nameTeam) %>%
+  summarise(
+    total_minutes = sum(minutes),
+    total_true_shooting_attempts = sum(fga + 0.44 * fta),
+    ts_pct = sum(pts) / sum((2 * (fga + 0.44 * fta)))
+  ) %>%
+  filter(total_minutes >= 500) %>%
+  group_by(nameTeam) %>%
+  arrange(desc(total_true_shooting_attempts)) %>%
+  ungroup()
+
+# Calculate League Average True Shooting %
+leagueTS = trueShootingSummary_df %>% summarise(mean(ts_pct)) %>% pull()
+
+# Create DF with Tooltip Chart Nested List
+donutList = 
+  donutBase %>%
+  select(nameTeam, primary_color) %>%
+  inner_join(trueShootingSummary_df) %>%
+  nest(-nameTeam, -primary_color) %>%
+  mutate(
+    tsSummary = 
+      data %>%
+      map(mutate_mapping, hcaes(name = namePlayer, y = ts_pct, z = total_true_shooting_attempts), drop = TRUE) %>%
+      map(list_parse)
+  ) %>%
+  select(-data) %>%
+  mutate(segment = 1)
+
+hchart(
+  donutList,
+  "pie",
+  hcaes(name = nameTeam, y = segment, color = primary_color),
+  innerSize = 500
+) %>%
+hc_tooltip(
+  useHTML = TRUE,
+  headerFormat = "<b>{point.key}</b>",
+  pointFormatter = 
+    tooltip_chart(
+      accesor = "tsSummary",
+      hc_opts = list(
+        chart = list(type = "bubble"),
+        yAxis = list(
+          min = 0.4, max = 0.75, 
+          title = list(text = "True Shooting %"),
+          plotLines = list(
+            list(
+              value = leagueTS,
+              zIndex = -100,
+              color = "#C9CFCC",
+              label = list(text = "League Average", align = "right", style = list(fontWeight = "bold", color = "#C9CFCC")
+              )
+            )
+          )
+        ),
+        xAxis = list(visible = FALSE),
+        plotOptions = list(
+          bubble = list(
+            dataLabels = list(
+              enabled = TRUE, 
+              allowOverlap = TRUE,
+              format = "{point.name}", 
+              style = list(textOutline = "none", color = "#011627", fontSize = "10px", fontWeight = "normal")
+            )
+          )
+        )
+      ),
+      height = 225,
+      width = 375
+    ),
+  # Javascript positioner to center tooltip inside pie chart (stolen from Kunsts blog linked) and some other properties
+  positioner = JS(
+    "function () {
+      /* one of the most important parts! */
+      xp =  this.chart.chartWidth/2 - this.label.width/2
+      yp =  this.chart.chartHeight/2 - this.label.height/2
+      return { x: xp, y: yp };
+    }"),
+  shadow = FALSE,
+  borderWidth = 0,
+  backgroundColor = "transparent",
+  hideDelay = 1000
+) %>%
+hc_add_theme(hc_theme_hcCookbook) %>%
+hc_size(height = 750) %>%
+hc_title(text = "True Shooting %") %>%
+hc_subtitle(text = "Team breakdowns for 500+ min players")
 
 ```
 
-### Showcase: Donut Tooltip
-
-Let's try to replicate Josh Kunst's awesome donut / scatter plot but with NBA data. I'll try to talk through the logic here.
 
 
+### Animation
+
+* Animation is enabled through the motion plugin
+* The documentation for plugins is not through the main documentation but supplementary resources like https://github.com/TorsteinHonsi/Motion-Highcharts-Plugin/wiki
+* Difficulty will be (as always) in getting the data in the right named list
+* We want a set of 10 named lists called `sequence` with a set of n elements defining the game # for each player
+* Motion will then cycle through the sequence of n points plotting each point
+
+```{r, class.source="language-r"}
+# Top 10 Stockers for 19-20
+bigStockers = 
+  gamelogs %>%
+  group_by(namePlayer) %>%
+  summarise(
+    steals = sum(stl),
+    blocks = sum(blk),
+    stocks = sum(stl + blk)
+  ) %>% 
+  arrange(desc(stocks)) %>%
+  slice(1:10)
+
+# Create a cumulative stocks (steals and blocks) df for each player in the top 10
+seriesDF = 
+  gamelogs %>%
+  inner_join(bigStockers %>% select(namePlayer), by = "namePlayer") %>%
+  group_by(namePlayer) %>%
+  arrange(numberGamePlayerSeason) %>%
+  mutate(
+    stealsCum = cumsum(stl),
+    blocksCum = cumsum(blk),
+    stocksCum = cumsum(stl + blk)
+  ) %>%
+  ungroup() %>%
+  select(namePlayer, numberGamePlayerSeason, matches("Cum$"), urlPlayerThumbnail)
+
+# Group dataframe by player and use group map to create the named list for each point within each series
+#   Each point has a definition that includes:
+#   an x value
+#   a y value
+#   a pointTitle (will be used for datalabel)
+#   a marker definition (nested list defining a URL link to the players headshot that will appear as the markr with dimensions)
+playerSeries = 
+  seriesDF %>%
+  mutate(namePlayer = str_remove(namePlayer, "\\w+ ")) %>%
+  group_by(namePlayer) %>%
+  group_map(~{
+   .x %>%
+   pmap(
+     function(namePlayer, numberGamePlayerSeason, stealsCum, blocksCum,  stocksCum, urlPlayerThumbnail) {
+       list(
+         x = stealsCum,
+         y = blocksCum,
+         pointTitle = glue("{namePlayer} <i>(stocks: {stocksCum})</i>"),
+         marker = list(symbol = glue("url({urlPlayerThumbnail})"), height = 50, width = 62.5)
+       ) 
+     }
+   )
+  }, keep = TRUE) %>%
+  map(
+    ~list(sequence = .)
+  ) 
+
+highchart() %>% 
+  hc_chart(type = "scatter") %>% 
+  hc_xAxis(min = -10, max = max(bigStockers$steals)*1.1,title = list(text = "Cumulative Steals")) %>%
+  hc_yAxis(min = -10, max = max(bigStockers$blocks)*1.1, title = list(text = "Cumulative Blocks")) %>%
+  hc_add_series_list(
+    list(
+      list(
+        name = "Stocks",
+        data = playerSeries
+      )
+    )
+  ) %>%
+  hc_motion(
+    enabled = TRUE,
+    axisLabel = "Game #",
+    labels = unique(seriesDF$numberGamePlayerSeason)
+  ) %>%
+  hc_add_dependency_fa() %>% # Needed to add fontawesome icons to the page (loads the CDN i believe)
+  hc_title(text = "Top 10 Stockers") %>%
+  hc_subtitle(text = "The race to be 19-20s top league leading stocker") %>%
+  hc_add_theme(hc_theme_hcCookbook) %>%
+  hc_plotOptions(
+    scatter = list(
+      dataLabels = list(
+        enabled = TRUE,
+        formatter = JS(
+        "function(){return(this.point.pointTitle)}"
+        ),
+        style = list(fontSize = 10, textOutline = "none"),
+        y = 47 # Offset label 47 pixels downwards
+      )
+    )
+  ) %>%
+  hc_size(height = 750)
+```
 
 
-### Showcase: Animation
 
 
 
