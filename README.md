@@ -11,3 +11,9 @@ The slides for the presentation can be found:
 The .rmd file is in this repo but a live + compiled version can be found on my website:
 
 * [here](https://www.tmbish.me/lab/highcharter-cookbook/)
+
+## Screencast
+
+A video capture of the talk is on
+
+* [Youtube](https://www.youtube.com/watch?v=eOcaDU1cfec&t=1318s)
